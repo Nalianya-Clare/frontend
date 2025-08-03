@@ -1,5 +1,7 @@
-import { Shield, Trophy, User, Settings, LogOut } from "lucide-react";
+import { Shield, Trophy, User, Settings, LogOut, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Link, useLocation } from "react-router-dom";
+import { useAuth } from "@/contexts/AuthContext";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,12 +12,23 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 const NavHeader = () => {
+  const location = useLocation();
+  const { user, isAuthenticated, logout } = useAuth();
+
+  const isActive = (path: string) => {
+    return location.pathname === path;
+  };
+
+  const handleLogout = () => {
+    logout();
+  };
+
   return (
     <header className="border-b border-border/50 bg-card/50 backdrop-blur-sm sticky top-0 z-50">
       <div className="container mx-auto px-6 py-4">
         <div className="flex items-center justify-between">
           {/* Logo */}
-          <div className="flex items-center space-x-3">
+          <Link to="/" className="flex items-center space-x-3 hover:opacity-80 transition-opacity">
             <div className="p-2 rounded-lg bg-gradient-primary">
               <Shield className="h-6 w-6 text-primary-foreground" />
             </div>
@@ -25,60 +38,117 @@ const NavHeader = () => {
               </h1>
               <p className="text-xs text-muted-foreground">Security Learning Platform</p>
             </div>
-          </div>
+          </Link>
 
           {/* Navigation */}
           <nav className="hidden md:flex items-center space-x-6">
-            <Button variant="ghost" className="text-foreground hover:text-primary">
-              Challenges
-            </Button>
-            <Button variant="ghost" className="text-foreground hover:text-primary">
-              Leaderboard
-            </Button>
-            <Button variant="ghost" className="text-foreground hover:text-primary">
-              My Progress
-            </Button>
-            <Button variant="ghost" className="text-foreground hover:text-primary">
-              Admin
-            </Button>
+            <Link to="/">
+              <Button 
+                variant="ghost" 
+                className={`text-foreground hover:text-primary ${
+                  isActive('/') ? 'text-primary bg-primary/10' : ''
+                }`}
+              >
+                Home
+              </Button>
+            </Link>
+            <Link to="/categories">
+              <Button 
+                variant="ghost" 
+                className={`text-foreground hover:text-primary ${
+                  isActive('/categories') ? 'text-primary bg-primary/10' : ''
+                }`}
+              >
+                Categories
+              </Button>
+            </Link>
+            <Link to="/leaderboard">
+              <Button 
+                variant="ghost" 
+                className={`text-foreground hover:text-primary ${
+                  isActive('/leaderboard') ? 'text-primary bg-primary/10' : ''
+                }`}
+              >
+                Leaderboard
+              </Button>
+            </Link>
+            <Link to="/progress">
+              <Button 
+                variant="ghost" 
+                className={`text-foreground hover:text-primary ${
+                  isActive('/progress') ? 'text-primary bg-primary/10' : ''
+                }`}
+              >
+                My Progress
+              </Button>
+            </Link>
+            <Link to="/admin">
+              <Button 
+                variant="ghost" 
+                className={`text-foreground hover:text-primary ${
+                  isActive('/admin') ? 'text-primary bg-primary/10' : ''
+                }`}
+              >
+                Admin
+              </Button>
+            </Link>
           </nav>
 
           {/* User Menu */}
           <div className="flex items-center space-x-4">
-            <div className="hidden sm:flex items-center space-x-2 text-sm">
-              <Trophy className="h-4 w-4 text-accent" />
-              <span className="text-foreground">1,247 XP</span>
-            </div>
-            
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="relative">
-                  <User className="h-5 w-5" />
-                  <div className="absolute -top-1 -right-1 h-3 w-3 bg-primary rounded-full animate-cyber-pulse"></div>
+            {isAuthenticated ? (
+              <>
+                <div className="hidden sm:flex items-center space-x-2 text-sm">
+                  <Trophy className="h-4 w-4 text-accent" />
+                  <span className="text-foreground">1,247 XP</span>
+                </div>
+                
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="relative">
+                      <User className="h-5 w-5" />
+                      <div className="absolute -top-1 -right-1 h-3 w-3 bg-primary rounded-full animate-cyber-pulse"></div>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuLabel>
+                      {user?.first_name} {user?.last_name}
+                      <div className="text-xs text-muted-foreground font-normal">{user?.email}</div>
+                    </DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem>
+                      <User className="mr-2 h-4 w-4" />
+                      Profile
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>
+                      <Trophy className="mr-2 h-4 w-4" />
+                      Achievements
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>
+                      <Settings className="mr-2 h-4 w-4" />
+                      Settings
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem className="text-destructive" onClick={handleLogout}>
+                      <LogOut className="mr-2 h-4 w-4" />
+                      Log out
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </>
+            ) : (
+              <div className="flex items-center space-x-2">
+                <Button variant="ghost" asChild>
+                  <Link to="/login">
+                    <LogIn className="mr-2 h-4 w-4" />
+                    Sign In
+                  </Link>
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>
-                  <User className="mr-2 h-4 w-4" />
-                  Profile
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Trophy className="mr-2 h-4 w-4" />
-                  Achievements
-                </DropdownMenuItem>
-                <DropdownMenuItem>
-                  <Settings className="mr-2 h-4 w-4" />
-                  Settings
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="text-destructive">
-                  <LogOut className="mr-2 h-4 w-4" />
-                  Log out
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                <Button variant="cyber" asChild>
+                  <Link to="/register">Sign Up</Link>
+                </Button>
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -38,6 +38,10 @@ All colors MUST be HSL.
     --destructive: 0 100% 65%;
     --destructive-foreground: 210 30% 8%;
 
+    /* Warning Orange */
+    --warning: 30 100% 50%;
+    --warning-foreground: 210 30% 8%;
+
     /* Success Green */
     --success: 120 100% 40%;
     --success-foreground: 210 30% 8%;
