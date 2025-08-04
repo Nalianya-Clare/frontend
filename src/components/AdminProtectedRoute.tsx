@@ -49,9 +49,7 @@ const AdminProtectedRoute: React.FC<AdminProtectedRouteProps> = ({ children }) =
               <p className="text-sm text-muted-foreground">
                 Current role: <span className="font-semibold">{user?.role || 'Unknown'}</span>
               </p>
-              <p className="text-sm text-muted-foreground">
-                Required roles: <span className="font-semibold">admin</span> or <span className="font-semibold">super</span>
-              </p>
+           
             </div>
             
             <div className="flex flex-col space-y-2">
