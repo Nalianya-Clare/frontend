@@ -3,12 +3,19 @@ import { API_ENDPOINTS } from './api-config';
 
 // Type definitions
 export interface User {
-  id: number;
+  id: string;
   email: string;
   first_name: string;
   last_name: string;
+  phone: string;
+  profile_picture: string | null;
+  role: string;
+  gender: string | null;
+  profession: string | null;
   is_active: boolean;
-  date_joined: string;
+  meeting_url: string | null;
+  is_medical_staff: boolean;
+  is_approved_staff: boolean;
 }
 
 export interface AuthTokens {
@@ -34,6 +41,40 @@ export interface RegisterData {
   confirm_psd: string;
   first_name: string;
   last_name: string;
+}
+
+export interface CreateUserRequest {
+  email: string;
+  password: string;
+  first_name: string;
+  last_name: string;
+  phone?: string;
+  role?: string;
+  gender?: string;
+  profession?: string;
+  is_active?: boolean;
+  is_medical_staff?: boolean;
+  is_approved_staff?: boolean;
+}
+
+export interface UpdateUserRequest {
+  email?: string;
+  first_name?: string;
+  last_name?: string;
+  phone?: string;
+  role?: string;
+  gender?: string;
+  profession?: string;
+  is_active?: boolean;
+  is_medical_staff?: boolean;
+  is_approved_staff?: boolean;
+}
+
+export interface UserListResponse {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: User[];
 }
 
 export interface Category {
@@ -341,6 +382,33 @@ export const categoryService = {
     }
     
     return { results: [] };
+  },
+
+  // Add CRUD operations to categoryService as well
+  create: async (categoryData: CreateCategoryRequest): Promise<Category> => {
+    const response: any = await apiClient.post(API_ENDPOINTS.QUIZ.CATEGORIES, categoryData);
+    
+    // Handle the response structure
+    if (response.success && response.response?.[0]?.details?.[0]?.data) {
+      return response.response[0].details[0].data;
+    }
+    
+    throw new Error('Failed to create category');
+  },
+
+  update: async (id: number, categoryData: Partial<CreateCategoryRequest>): Promise<Category> => {
+    const response: any = await apiClient.patch(`${API_ENDPOINTS.QUIZ.CATEGORIES}/${id}`, categoryData);
+    
+    // Handle the response structure
+    if (response.success && response.response?.[0]?.details?.[0]?.data) {
+      return response.response[0].details[0].data;
+    }
+    
+    throw new Error('Failed to update category');
+  },
+
+  delete: async (id: number): Promise<void> => {
+    await apiClient.delete(`${API_ENDPOINTS.QUIZ.CATEGORIES}/${id}`);
   },
 };
 
@@ -661,4 +729,154 @@ export const authService = {
   getProfile: (): Promise<User> => {
     return apiClient.get(API_ENDPOINTS.AUTH.PROFILE);
   },
+};
+
+// Admin Services
+export interface CreateQuizRequest {
+  title: string;
+  description: string;
+  category: number;
+  difficulty: 'easy' | 'medium' | 'hard';
+  time_limit?: number;
+  total_questions?: number;
+  pass_score?: number;
+  points_reward?: number;
+  questions_data?: CreateQuestionRequest[];
+}
+
+export interface CreateQuestionRequest {
+  question_text: string;
+  question_type: 'multiple_choice' | 'true_false' | 'fill_blank';
+  explanation: string;
+  points: number;
+  order: number;
+  answers: CreateAnswerRequest[];
+}
+
+export interface CreateAnswerRequest {
+  answer_text: string;
+  is_correct: boolean;
+  order: number;
+}
+
+export interface CreateCategoryRequest {
+  name: string;
+  description: string;
+  icon?: string;
+  color?: string;
+}
+
+export interface AdminStats {
+  total_users: number;
+  active_quizzes: number;
+  total_questions: number;
+  completion_rate: number;
+}
+
+export const adminService = {
+  // User Management
+  getUsers: async (page?: number, search?: string): Promise<UserListResponse> => {
+    const params = new URLSearchParams();
+    if (page) params.append('page', page.toString());
+    if (search) params.append('search', search);
+    
+    const response: UserListResponse = await apiClient.get(`${API_ENDPOINTS.AUTH.USERS}?${params.toString()}`);
+    
+    // Handle direct response format (not nested like other endpoints)
+    return {
+      count: response.count || 0,
+      next: response.next || null,
+      previous: response.previous || null,
+      results: response.results || []
+    };
+  },
+
+  createUser: (userData: CreateUserRequest): Promise<User> => {
+    return apiClient.post(API_ENDPOINTS.AUTH.USERS, userData);
+  },
+
+  getUserById: (id: string): Promise<User> => {
+    return apiClient.get(`${API_ENDPOINTS.AUTH.USERS}/${id}`);
+  },
+
+  updateUser: (id: string, userData: UpdateUserRequest): Promise<User> => {
+    return apiClient.put(`${API_ENDPOINTS.AUTH.USERS}/${id}`, userData);
+  },
+
+  patchUser: (id: string, userData: Partial<UpdateUserRequest>): Promise<User> => {
+    return apiClient.patch(`${API_ENDPOINTS.AUTH.USERS}/${id}`, userData);
+  },
+
+  deleteUser: (id: string): Promise<void> => {
+    return apiClient.delete(`${API_ENDPOINTS.AUTH.USERS}/${id}`);
+  },
+
+  // Quiz Management
+  createQuiz: (quizData: CreateQuizRequest): Promise<Quiz> => {
+    return apiClient.post(API_ENDPOINTS.QUIZ.QUIZZES, quizData);
+  },
+
+  updateQuiz: (id: number, quizData: Partial<Quiz>): Promise<Quiz> => {
+    return apiClient.patch(`${API_ENDPOINTS.QUIZ.QUIZZES}/${id}`, quizData);
+  },
+
+  deleteQuiz: (id: number): Promise<void> => {
+    return apiClient.delete(`${API_ENDPOINTS.QUIZ.QUIZZES}/${id}`);
+  },
+
+  // Category Management
+  createCategory: (categoryData: CreateCategoryRequest): Promise<Category> => {
+    return apiClient.post(API_ENDPOINTS.QUIZ.CATEGORIES, categoryData);
+  },
+
+  updateCategory: (id: number, categoryData: Partial<Category>): Promise<Category> => {
+    return apiClient.patch(`${API_ENDPOINTS.QUIZ.CATEGORIES}/${id}`, categoryData);
+  },
+
+  deleteCategory: (id: number): Promise<void> => {
+    return apiClient.delete(`${API_ENDPOINTS.QUIZ.CATEGORIES}/${id}`);
+  },
+
+  // Badge Management
+  getBadges: async (page?: number): Promise<ApiResponse<Badge>> => {
+    const params = page ? `?page=${page}` : '';
+    return apiClient.get(`${API_ENDPOINTS.QUIZ.BADGES}${params}`);
+  },
+
+  createBadge: (badgeData: Partial<Badge>): Promise<Badge> => {
+    return apiClient.post(API_ENDPOINTS.QUIZ.BADGES, badgeData);
+  },
+
+  updateBadge: (id: number, badgeData: Partial<Badge>): Promise<Badge> => {
+    return apiClient.patch(`${API_ENDPOINTS.QUIZ.BADGES}/${id}`, badgeData);
+  },
+
+  deleteBadge: (id: number): Promise<void> => {
+    return apiClient.delete(`${API_ENDPOINTS.QUIZ.BADGES}/${id}`);
+  },
+
+  // Dashboard Stats (we'll calculate these from existing endpoints)
+  getDashboardStats: async (): Promise<AdminStats> => {
+    try {
+      const [usersResponse, quizzesResponse] = await Promise.all([
+        adminService.getUsers(1),
+        quizService.getAll()
+      ]);
+
+      return {
+        total_users: usersResponse.count || 0,
+        active_quizzes: quizzesResponse.results?.length || 0,
+        total_questions: quizzesResponse.results?.reduce((sum, quiz) => sum + (quiz.question_count || 0), 0) || 0,
+        completion_rate: 87 // This would need to be calculated based on user progress data
+      };
+    } catch (error) {
+      console.error('Error fetching dashboard stats:', error);
+      return {
+        total_users: 0,
+        active_quizzes: 0,
+        total_questions: 0,
+        completion_rate: 0
+      };
+    }
+  }
 };

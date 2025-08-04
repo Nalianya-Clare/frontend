@@ -10,6 +10,8 @@ interface AuthContextType {
   register: (userData: RegisterData) => Promise<boolean>;
   logout: () => void;
   isAuthenticated: boolean;
+  isAdmin: boolean;
+  hasAdminAccess: () => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -110,6 +112,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     setUser(null);
   };
 
+  const hasAdminAccess = (): boolean => {
+    if (!user) return false;
+    // Check if user has admin or super role
+    return user.role === 'admin' || user.role === 'super';
+  };
+
   const value: AuthContextType = {
     user,
     loading,
@@ -117,6 +125,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     register,
     logout,
     isAuthenticated: !!user && tokenManager.isAuthenticated(),
+    isAdmin: hasAdminAccess(),
+    hasAdminAccess,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
