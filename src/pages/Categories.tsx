@@ -119,7 +119,7 @@ const Categories = () => {
         {/* Page Header */}
         <div className="text-center space-y-4">
           <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-            Cybersecurity Categories
+            Cybersecurity Modules
           </h1>
           <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
             Master cybersecurity through specialized challenges across multiple domains. 
@@ -132,7 +132,7 @@ const Categories = () => {
           <div className="relative flex-1 w-full">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
-              placeholder="Search categories..."
+              placeholder="Search modules..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="pl-10"
@@ -145,7 +145,7 @@ const Categories = () => {
           <Card className="text-center p-4">
             <CardContent className="p-0">
               <div className="text-2xl font-bold text-primary">{categories.length}</div>
-              <div className="text-sm text-muted-foreground">Categories</div>
+              <div className="text-sm text-muted-foreground">Modules</div>
             </CardContent>
           </Card>
           <Card className="text-center p-4">

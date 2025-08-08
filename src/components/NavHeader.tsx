@@ -59,7 +59,7 @@ const NavHeader = () => {
                   isActive('/categories') ? 'text-primary bg-primary/10' : ''
                 }`}
               >
-                Categories
+                Modules
               </Button>
             </Link>
             <Link to="/leaderboard">
