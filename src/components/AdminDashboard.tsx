@@ -21,7 +21,7 @@ import {
   Crown,
   UserCheck
 } from "lucide-react";
-import { adminService, quizService, categoryService, type User, type Quiz, type Category, type CreateQuizRequest, type CreateQuestionRequest, type CreateAnswerRequest, type AdminStats, type CreateUserRequest, type UpdateUserRequest, type UserListResponse } from "@/lib/api-services";
+import { adminService, quizService, categoryService, resourceService, type User, type Quiz, type Category, type Resource, type CreateQuizRequest, type CreateQuestionRequest, type CreateAnswerRequest, type AdminStats, type CreateUserRequest, type UpdateUserRequest, type UserListResponse } from "@/lib/api-services";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -41,6 +41,112 @@ const AdminDashboard = () => {
   }, [hasAdminAccess, toast]);
 
   const [activeTab, setActiveTab] = useState("overview");
+  // Resource state
+  // Replace your existing resource state and functions with these updated versions:
+
+// Resource state (update this)
+const [resources, setResources] = useState<Resource[]>([]);
+const [newResource, setNewResource] = useState<{ 
+  description: string; 
+  raw_file: File | null; 
+  image: File | null;
+  quiz?: number; // Add this field
+}>({ 
+  description: '', 
+  raw_file: null, 
+  image: null,
+  quiz: undefined // Add this field
+});
+const [resourceLoading, setResourceLoading] = useState(false);
+
+// Load resources (update this)
+const loadResources = async () => {
+  setResourceLoading(true);
+  try {
+    const res = await resourceService.getAll();
+    setResources(res.results || []);
+  } catch (error) {
+    toast({ 
+      title: 'Error', 
+      description: 'Failed to load resources', 
+      variant: 'destructive' 
+    });
+  } finally {
+    setResourceLoading(false);
+  }
+};
+
+// Handle resource create (update this)
+const handleCreateResource = async (e: React.FormEvent) => {
+  e.preventDefault();
+  if (!newResource.description) {
+    toast({ 
+      title: 'Error', 
+      description: 'Description is required', 
+      variant: 'destructive' 
+    });
+    return;
+  }
+  
+  setResourceLoading(true);
+  try {
+    await resourceService.create({
+      description: newResource.description,
+      raw_file: newResource.raw_file || undefined,
+      image: newResource.image || undefined,
+      quiz: newResource.quiz, // Add this field
+    });
+    
+    toast({ 
+      title: 'Success', 
+      description: newResource.quiz 
+        ? 'Resource created and assigned to quiz' 
+        : 'Resource created successfully' 
+    });
+    
+    // Reset form
+    setNewResource({ 
+      description: '', 
+      raw_file: null, 
+      image: null,
+      quiz: undefined // Reset this field too
+    });
+    
+    loadResources();
+  } catch (error) {
+    toast({ 
+      title: 'Error', 
+      description: 'Failed to create resource', 
+      variant: 'destructive' 
+    });
+  } finally {
+    setResourceLoading(false);
+  }
+};
+
+// Update the useEffect to also load quizzes when needed
+useEffect(() => {
+  loadDashboardData();
+  loadResources();
+  // Load quizzes for the resource selector
+  if (quizzes.length === 0) {
+    loadQuizzes();
+  }
+}, []);
+
+// Add this useEffect to load quizzes when switching to resources tab
+useEffect(() => {
+  if (activeTab === "resources" && quizzes.length === 0) {
+    loadQuizzes();
+  }
+}, [activeTab]);
+
+  // Handle file input
+  const handleResourceFileChange = (e: React.ChangeEvent<HTMLInputElement>, type: 'raw_file' | 'image') => {
+    if (e.target.files && e.target.files[0]) {
+      setNewResource((prev) => ({ ...prev, [type]: e.target.files![0] }));
+    }
+  };
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState<AdminStats>({
     total_users: 0,
@@ -110,6 +216,7 @@ const AdminDashboard = () => {
   // Load initial data
   useEffect(() => {
     loadDashboardData();
+    loadResources();
   }, []);
 
   const loadDashboardData = async () => {
@@ -1674,9 +1781,166 @@ const AdminDashboard = () => {
     { id: "categories", label: "Categories", icon: Target },
     { id: "questions", label: "Quizzes", icon: FileText },
     { id: "users", label: "Users", icon: Users },
+    { id: "resources", label: "Resources", icon: FileText },
     { id: "schedule", label: "Schedule", icon: Calendar },
     { id: "settings", label: "Settings", icon: Settings },
   ];
+  // Resource Manager UI
+  // Add this to your AdminDashboard component, replacing the existing renderResourceManager function
+
+// Add this to your AdminDashboard component, replacing the existing renderResourceManager function
+
+const renderResourceManager = () => (
+  <div className="space-y-8">
+    <h2 className="text-2xl font-bold mb-4">Resources</h2>
+    
+    <Card>
+      <CardHeader>
+        <CardTitle>Add New Resource</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <form className="space-y-4" onSubmit={handleCreateResource}>
+          {/* Quiz Selection */}
+          <div className="space-y-2">
+            <Label htmlFor="resourceQuiz">Assign to Quiz (Optional)</Label>
+            <Select
+              value={newResource.quiz ? newResource.quiz.toString() : "none"}
+              onValueChange={(value) => 
+                setNewResource(prev => ({ 
+                  ...prev, 
+                  quiz: value === "none" ? undefined : parseInt(value)
+                }))
+              }
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Select a quiz (optional)" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">No Quiz Assignment</SelectItem>
+                {quizzes.map((quiz) => (
+                  <SelectItem key={quiz.id} value={quiz.id.toString()}>
+                    {quiz.title} ({quiz.category_name})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-xs text-muted-foreground">
+              Select a quiz to associate this resource with, or leave blank for general resources
+            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="resourceDescription">Description</Label>
+            <Textarea 
+              id="resourceDescription"
+              placeholder="Describe this resource..."
+              value={newResource.description} 
+              onChange={e => setNewResource(r => ({ ...r, description: e.target.value }))} 
+              required 
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="resourceFile">Raw File (PDF, DOC, TXT, etc.)</Label>
+            <Input 
+              id="resourceFile"
+              type="file" 
+              accept=".pdf,.doc,.docx,.txt,.ppt,.pptx,.xls,.xlsx" 
+              onChange={e => handleResourceFileChange(e, 'raw_file')} 
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <Label htmlFor="resourceImage">Image</Label>
+            <Input 
+              id="resourceImage"
+              type="file" 
+              accept="image/*" 
+              onChange={e => handleResourceFileChange(e, 'image')} 
+            />
+          </div>
+          
+          <Button type="submit" variant="cyber" disabled={resourceLoading}>
+            {resourceLoading ? (
+              <Loader2 className="animate-spin h-4 w-4 mr-2" />
+            ) : (
+              <Plus className="h-4 w-4 mr-2" />
+            )}
+            Add Resource
+          </Button>
+        </form>
+      </CardContent>
+    </Card>
+
+    {/* Existing Resources */}
+    <Card>
+      <CardHeader>
+        <CardTitle>Existing Resources</CardTitle>
+      </CardHeader>
+      <CardContent>
+        {resourceLoading ? (
+          <div className="flex items-center justify-center py-8">
+            <Loader2 className="animate-spin h-6 w-6" />
+          </div>
+        ) : (
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+            {resources.map(res => (
+              <Card key={res.id} className="border border-border">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-lg">Resource #{res.id}</CardTitle>
+                  {res.quiz_title && (
+                    <div className="text-sm text-muted-foreground bg-muted/20 px-2 py-1 rounded">
+                      📚 Assigned to: {res.quiz_title}
+                    </div>
+                  )}
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div>
+                    <span className="font-medium text-sm">Description:</span>
+                    <p className="text-sm text-muted-foreground mt-1">{res.description}</p>
+                  </div>
+                  
+                  {res.raw_file && (
+                    <div>
+                      <a 
+                        href={res.raw_file} 
+                        target="_blank" 
+                        rel="noopener noreferrer" 
+                        className="inline-flex items-center text-sm text-primary hover:text-primary/80 underline"
+                      >
+                        📄 Download File
+                      </a>
+                    </div>
+                  )}
+                  
+                  {res.image && (
+                    <div>
+                      <img 
+                        src={res.image} 
+                        alt="Resource" 
+                        className="max-h-32 w-full object-cover rounded border" 
+                      />
+                    </div>
+                  )}
+                  
+                  <div className="text-xs text-muted-foreground pt-2 border-t">
+                    Uploaded: {new Date(res.uploaded_at).toLocaleDateString()}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+            
+            {resources.length === 0 && (
+              <div className="col-span-full text-center py-8 text-muted-foreground">
+                No resources found. Add your first resource above.
+              </div>
+            )}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  </div>
+);
 
   return (
     <div className="space-y-6">
@@ -1732,10 +1996,11 @@ const AdminDashboard = () => {
 
       {/* Tab Content */}
       <div className="min-h-[500px]">
-        {activeTab === "overview" && renderOverview()}
-        {activeTab === "questions" && renderQuestionManager()}
-        {activeTab === "categories" && renderCategoryManager()}
-        {activeTab === "users" && renderUserManager()}
+  {activeTab === "overview" && renderOverview()}
+  {activeTab === "questions" && renderQuestionManager()}
+  {activeTab === "categories" && renderCategoryManager()}
+  {activeTab === "users" && renderUserManager()}
+  {activeTab === "resources" && renderResourceManager()}
         {activeTab === "schedule" && (
           <div className="text-center py-12">
             <Clock className="h-16 w-16 text-muted-foreground mx-auto mb-4" />

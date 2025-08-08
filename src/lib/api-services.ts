@@ -1,3 +1,4 @@
+
 import { apiClient } from './api-client';
 import { API_ENDPOINTS } from './api-config';
 
@@ -116,6 +117,7 @@ export interface Quiz {
   question_count: number;
   created_by_name?: string;
   created_at: string;
+  resources?: Resource[];
 }
 
 export interface Question {
@@ -159,6 +161,39 @@ export interface Badge {
   category: number | null;
   category_name: string;
   is_active: boolean;
+}
+
+export interface Resource {
+  id: number;
+  raw_file: string | null;
+  image: string | null;
+  description: string;
+  uploaded_at: string;
+  quiz?: number; // Add this field
+  quiz_title?: string; // Add this field for display purposes
+  quiz_category?: string; 
+}
+
+export interface CreateResourceRequest {
+  raw_file?: File;
+  image?: File;
+  description: string;
+  quiz?: number; // <-- ADD THIS
+
+}
+
+export interface ResourceListResponse {
+  success: boolean;
+  response: Array<{
+    status_code: number;
+    code: string;
+    details: Array<{
+      count: number;
+      next: string | null;
+      previous: string | null;
+      results: Resource[];
+    }>;
+  }>;
 }
 
 export interface GameSession {
@@ -216,7 +251,7 @@ export interface SingleQuizResponse {
     status_code: number;
     code: string;
     details: Array<{
-      data: Quiz & { questions: Question[] };
+      data: Quiz & { questions: Question[]; resources?: Resource[] };
     }>;
   }>;
 }
@@ -348,6 +383,174 @@ export interface SingleCategoryResponse {
     }>;
   }>;
 }
+
+// Resource Service
+export const resourceService = {
+  getAll: async (): Promise<{ results: Resource[] }> => {
+    try {
+      const response: any = await apiClient.get(API_ENDPOINTS.QUIZ.RESOURCES);
+      
+      // Debug logging to understand response structure
+      console.log('=== RESOURCE API DEBUG ===');
+      console.log('Raw API Response:', JSON.stringify(response, null, 2));
+      console.log('Response type:', typeof response);
+      console.log('Is Array:', Array.isArray(response));
+      console.log('Response keys:', Object.keys(response || {}));
+      
+      // Check if response is a direct array (common Django REST framework pattern)
+      if (Array.isArray(response)) {
+        console.log('✓ Response is direct array, using as results');
+        return { results: response as Resource[] };
+      }
+      
+      // Check if response has results property (pagination)
+      if (response && typeof response === 'object' && response.results) {
+        console.log('✓ Response has results property, using response.results');
+        return { results: response.results as Resource[] };
+      }
+      
+      // Handle different possible response structures
+      if (response && response.success) {
+        console.log('Response has success property');
+        
+        // Try nested structure first
+        if (response.response?.[0]?.details?.[0]?.results) {
+          console.log('✓ Using nested structure');
+          return { results: response.response[0].details[0].results };
+        }
+        // Try direct results structure
+        if ((response.response as any)?.results) {
+          console.log('✓ Using direct results structure');
+          return { results: (response.response as any).results };
+        }
+        // Try if response is direct array
+        if (Array.isArray(response.response)) {
+          console.log('✓ Using direct array structure');
+          return { results: response.response as unknown as Resource[] };
+        }
+      }
+      
+      console.log('❌ No matching structure found, returning empty array');
+      console.log('Available response structure:');
+      console.log('- response.success:', response?.success);
+      console.log('- response.response:', response?.response);
+      console.log('- response.results:', response?.results);
+      
+      return { results: [] };
+    } catch (error) {
+      console.error('❌ Error fetching resources:', error);
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack
+      });
+      throw error; // Re-throw so the UI can catch it properly
+    }
+  },
+
+  create: async (resourceData: CreateResourceRequest): Promise<Resource> => {
+    try {
+      // Use FormData for file uploads
+      const formData = new FormData();
+      if (resourceData.raw_file) formData.append('raw_file', resourceData.raw_file);
+      if (resourceData.image) formData.append('image', resourceData.image);
+      formData.append('description', resourceData.description);
+      if (resourceData.quiz) formData.append('quiz', resourceData.quiz.toString());
+
+      
+      const response: any = await apiClient.post(API_ENDPOINTS.QUIZ.RESOURCES, formData);
+      
+      // Debug logging to understand response structure
+      console.log('=== RESOURCE CREATE DEBUG ===');
+      console.log('Raw Create Response:', JSON.stringify(response, null, 2));
+      console.log('Response type:', typeof response);
+      console.log('Response keys:', Object.keys(response || {}));
+      
+      // Check if response is direct resource object (common pattern)
+      if (response && response.id) {
+        console.log('✅ Response is direct resource object');
+        return response as Resource;
+      }
+      
+      // Handle different possible response structures
+      if (response && response.success) {
+        console.log('Response has success property');
+        
+        // Try nested structure first
+        if (response.response?.[0]?.details?.[0]?.data) {
+          console.log('✅ Using nested structure');
+          return response.response[0].details[0].data;
+        }
+        // Try direct data structure
+        if (response.response?.data) {
+          console.log('✅ Using direct data structure');
+          return response.response.data;
+        }
+        // Try if response.response is direct resource
+        if (response.response?.id) {
+          console.log('✅ Using response.response as resource');
+          return response.response;
+        }
+        // Try if response itself contains resource data after success
+        if (response.data?.id) {
+          console.log('✅ Using response.data as resource');
+          return response.data;
+        }
+      }
+      
+      // If we get here, log what we have and try to return something useful
+      console.log('❌ No matching structure found for create response');
+      console.log('Available response structure:');
+      console.log('- response.success:', response?.success);
+      console.log('- response.response:', response?.response);
+      console.log('- response.data:', response?.data);
+      console.log('- response.id:', response?.id);
+      
+      // Since the resource was created successfully on backend, return a minimal object
+      if (response) {
+        console.log('⚠️ Returning response as-is since creation succeeded');
+        return response as Resource;
+      }
+      
+      throw new Error('Failed to create resource - invalid response structure');
+    } catch (error) {
+      console.error('Error creating resource:', error);
+      throw new Error('Failed to create resource');
+    }
+  },
+
+  delete: async (id: number): Promise<void> => {
+    try {
+      await apiClient.delete(`${API_ENDPOINTS.QUIZ.RESOURCES}/${id}`);
+    } catch (error) {
+      console.error('Error deleting resource:', error);
+      throw new Error('Failed to delete resource');
+    }
+  },
+
+  getById: async (id: number): Promise<Resource> => {
+    try {
+      const response: any = await apiClient.get(`${API_ENDPOINTS.QUIZ.RESOURCES}/${id}`);
+      if (response.success) {
+        // Try nested structure first
+        if (response.response?.[0]?.details?.[0]?.data) {
+          return response.response[0].details[0].data;
+        }
+        // Try direct data structure
+        if (response.response?.data) {
+          return response.response.data;
+        }
+        // Try if response is direct resource
+        if (response.response?.id) {
+          return response.response;
+        }
+      }
+      throw new Error('Resource not found');
+    } catch (error) {
+      console.error('Error fetching resource:', error);
+      throw new Error('Failed to fetch resource');
+    }
+  },
+};
 
 // API Services
 export const categoryService = {

@@ -1,5 +1,5 @@
 // API Configuration
-const API_BASE_URL =  'http://217.76.59.68:4001';
+const API_BASE_URL =  'http://127.0.0.1:8000';
 
 export const API_ENDPOINTS = {
   // Auth endpoints
@@ -26,6 +26,7 @@ export const API_ENDPOINTS = {
     RESULTS: '/quiz/v1/results',
     POPULAR: '/quiz/v1/quizzes/popular',
     RECOMMENDED: '/quiz/v1/quizzes/recommended',
+    RESOURCES: '/quiz/v1/resources',
     GAME: {
       START: '/quiz/v1/game/start',
       SUBMIT_ANSWER: '/quiz/v1/game/submit_answer',

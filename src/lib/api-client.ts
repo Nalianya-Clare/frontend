@@ -40,9 +40,13 @@ class ApiClient {
     const url = `${this.baseURL}${endpoint}`;
     
     const headers: Record<string, string> = {
-      'Content-Type': 'application/json',
       ...(options.headers as Record<string, string> || {}),
     };
+
+    // Only set Content-Type to application/json if not FormData
+    if (!(options.body instanceof FormData)) {
+      headers['Content-Type'] = 'application/json';
+    }
 
     // Add authorization header if token exists
     const token = tokenManager.getAccessToken();
@@ -128,23 +132,29 @@ class ApiClient {
   }
 
   async post<T>(endpoint: string, data?: any): Promise<T> {
+    const body = data instanceof FormData ? data : (data ? JSON.stringify(data) : undefined);
+    
     return this.request<T>(endpoint, {
       method: 'POST',
-      body: data ? JSON.stringify(data) : undefined,
+      body,
     });
   }
 
   async put<T>(endpoint: string, data: any): Promise<T> {
+    const body = data instanceof FormData ? data : JSON.stringify(data);
+    
     return this.request<T>(endpoint, {
       method: 'PUT',
-      body: JSON.stringify(data),
+      body,
     });
   }
 
   async patch<T>(endpoint: string, data: any): Promise<T> {
+    const body = data instanceof FormData ? data : JSON.stringify(data);
+    
     return this.request<T>(endpoint, {
       method: 'PATCH',
-      body: JSON.stringify(data),
+      body,
     });
   }
 
