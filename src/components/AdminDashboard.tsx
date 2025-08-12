@@ -169,6 +169,7 @@ useEffect(() => {
     total_questions: 0,
     pass_score: 70,
     points_reward: 100,
+    start_time: "",
     questions_data: []
   });
 
@@ -176,8 +177,8 @@ useEffect(() => {
   const [newCategory, setNewCategory] = useState({
     name: "",
     description: "",
-    icon: "",
-    color: ""
+    icon: "F",
+    color: "#FF5733"
   });
 
   // User creation form state
@@ -284,7 +285,6 @@ useEffect(() => {
       });
       return;
     }
-
     if (newQuiz.questions_data && newQuiz.questions_data.length === 0) {
       toast({
         title: "Error",
@@ -293,7 +293,14 @@ useEffect(() => {
       });
       return;
     }
-
+    if (!newQuiz.start_time) {
+      toast({
+        title: "Error",
+        description: "Please select a start time for the quiz",
+        variant: "destructive"
+      });
+      return;
+    }
     setLoading(true);
     try {
       // Set total_questions based on questions_data length
@@ -301,13 +308,11 @@ useEffect(() => {
         ...newQuiz,
         total_questions: newQuiz.questions_data?.length || 0
       };
-      
       await adminService.createQuiz(quizToCreate);
       toast({
         title: "Success",
         description: "Quiz created successfully with questions",
       });
-      
       // Reset form
       setNewQuiz({
         title: "",
@@ -318,9 +323,9 @@ useEffect(() => {
         total_questions: 0,
         pass_score: 70,
         points_reward: 100,
+        start_time: "",
         questions_data: []
       });
-      
       // Reload quizzes
       loadQuizzes();
     } catch (error) {
@@ -946,7 +951,7 @@ useEffect(() => {
             />
           </div>
 
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-4 gap-4">
             <div className="space-y-2">
               <Label htmlFor="time_limit">Time Limit (minutes)</Label>
               <Input 
@@ -957,7 +962,6 @@ useEffect(() => {
                 onChange={(e) => setNewQuiz(prev => ({ ...prev, time_limit: parseInt(e.target.value) || 30 }))}
               />
             </div>
-            
             <div className="space-y-2">
               <Label htmlFor="pass_score">Pass Score (%)</Label>
               <Input 
@@ -968,7 +972,6 @@ useEffect(() => {
                 onChange={(e) => setNewQuiz(prev => ({ ...prev, pass_score: parseInt(e.target.value) || 70 }))}
               />
             </div>
-
             <div className="space-y-2">
               <Label htmlFor="points_reward">Points Reward</Label>
               <Input 
@@ -977,6 +980,16 @@ useEffect(() => {
                 placeholder="100"
                 value={newQuiz.points_reward}
                 onChange={(e) => setNewQuiz(prev => ({ ...prev, points_reward: parseInt(e.target.value) || 100 }))}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="start_time">Start Time</Label>
+              <Input
+                id="start_time"
+                type="datetime-local"
+                value={newQuiz.start_time ? newQuiz.start_time.substring(0, 16) : ""}
+                onChange={e => setNewQuiz(prev => ({ ...prev, start_time: e.target.value }))}
+                required
               />
             </div>
           </div>
@@ -1646,22 +1659,22 @@ useEffect(() => {
   const renderCategoryManager = () => (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Category Management</h2>
+        <h2 className="text-2xl font-bold">Modules Management</h2>
         <Button variant="cyber" onClick={() => loadDashboardData()}>
           <Plus className="mr-2 h-4 w-4" />
-          Refresh Categories
+          Refresh Modules
         </Button>
       </div>
 
-      {/* Create New Category Form */}
+      {/* Create New Module Form */}
       <Card>
         <CardHeader>
-          <CardTitle>Create New Category</CardTitle>
+          <CardTitle>Create New Module</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="categoryName">Category Name</Label>
+              <Label htmlFor="categoryName">Module Name</Label>
               <Input 
                 id="categoryName" 
                 placeholder="Enter category name..."
@@ -1670,7 +1683,7 @@ useEffect(() => {
               />
             </div>
 
-            <div className="space-y-2">
+            {/* <div className="space-y-2">
               <Label htmlFor="categoryIcon">Icon (optional)</Label>
               <Input 
                 id="categoryIcon" 
@@ -1678,7 +1691,7 @@ useEffect(() => {
                 value={newCategory.icon}
                 onChange={(e) => setNewCategory(prev => ({ ...prev, icon: e.target.value }))}
               />
-            </div>
+            </div> */}
           </div>
 
           <div className="space-y-2">
@@ -1692,20 +1705,20 @@ useEffect(() => {
             />
           </div>
 
-          <div className="space-y-2">
+          {/* <div className="space-y-2">
             <Label htmlFor="categoryColor">Color (optional)</Label>
             <Input 
               id="categoryColor" 
               placeholder="Color code (e.g., #FF5733)"
-              value={newCategory.color}
+              value="#FF5733"
               onChange={(e) => setNewCategory(prev => ({ ...prev, color: e.target.value }))}
             />
-          </div>
+          </div> */}
 
           <div className="flex space-x-4">
             <Button variant="cyber" onClick={handleCreateCategory} disabled={loading}>
               {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              Create Category
+              Create Module
             </Button>
             <Button variant="ghost" onClick={() => setNewCategory({
               name: "",
@@ -1722,7 +1735,7 @@ useEffect(() => {
       {/* Existing Categories */}
       <Card>
         <CardHeader>
-          <CardTitle>Existing Categories</CardTitle>
+          <CardTitle>Existing Modules</CardTitle>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -1755,9 +1768,9 @@ useEffect(() => {
                     }`}>
                       {category.is_active ? 'Active' : 'Inactive'}
                     </span>
-                    <Button size="sm" variant="ghost">
+                    {/* <Button size="sm" variant="ghost">
                       <Edit className="h-4 w-4" />
-                    </Button>
+                    </Button> */}
                     <Button size="sm" variant="ghost" onClick={() => handleDeleteCategory(category.id)}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -1780,10 +1793,10 @@ useEffect(() => {
     { id: "overview", label: "Overview", icon: BarChart3 },
     { id: "categories", label: "Categories", icon: Target },
     { id: "questions", label: "Quizzes", icon: FileText },
-    { id: "users", label: "Users", icon: Users },
     { id: "resources", label: "Resources", icon: FileText },
-    { id: "schedule", label: "Schedule", icon: Calendar },
-    { id: "settings", label: "Settings", icon: Settings },
+    { id: "users", label: "Users", icon: Users },
+    // { id: "schedule", label: "Schedule", icon: Calendar },
+    // { id: "settings", label: "Settings", icon: Settings },
   ];
   // Resource Manager UI
   // Add this to your AdminDashboard component, replacing the existing renderResourceManager function
@@ -1850,7 +1863,7 @@ const renderResourceManager = () => (
             />
           </div>
           
-          <div className="space-y-2">
+          {/* <div className="space-y-2">
             <Label htmlFor="resourceImage">Image</Label>
             <Input 
               id="resourceImage"
@@ -1858,7 +1871,7 @@ const renderResourceManager = () => (
               accept="image/*" 
               onChange={e => handleResourceFileChange(e, 'image')} 
             />
-          </div>
+          </div> */}
           
           <Button type="submit" variant="cyber" disabled={resourceLoading}>
             {resourceLoading ? (

@@ -587,17 +587,29 @@ export const categoryService = {
     return { results: [] };
   },
 
-  // Add CRUD operations to categoryService as well
   create: async (categoryData: CreateCategoryRequest): Promise<Category> => {
-    const response: any = await apiClient.post(API_ENDPOINTS.QUIZ.CATEGORIES, categoryData);
+  const response: any = await apiClient.post(API_ENDPOINTS.QUIZ.CATEGORIES, categoryData);
+  
+  // Handle the actual response structure you're getting
+  if (response.success && response.response?.[0]?.details?.[0]) {
+    const details = response.response[0].details[0];
     
-    // Handle the response structure
-    if (response.success && response.response?.[0]?.details?.[0]?.data) {
-      return response.response[0].details[0].data;
-    }
-    
-    throw new Error('Failed to create category');
-  },
+    // Return a category object based on what you have
+    return {
+      id: details.id,
+      name: categoryData.name,
+      description: categoryData.description,
+      icon: categoryData.icon || '',
+      color: categoryData.color || '',
+      is_active: true,
+      quiz_count: 0,
+      created_at: new Date().toISOString(),
+      // updated_at: new Date().toISOString()
+    };
+  }
+  
+  throw new Error('Failed to create category');
+},
 
   update: async (id: number, categoryData: Partial<CreateCategoryRequest>): Promise<Category> => {
     const response: any = await apiClient.patch(`${API_ENDPOINTS.QUIZ.CATEGORIES}/${id}`, categoryData);
@@ -943,6 +955,7 @@ export interface CreateQuizRequest {
   time_limit?: number;
   total_questions?: number;
   pass_score?: number;
+  start_time?: string;
   points_reward?: number;
   questions_data?: CreateQuestionRequest[];
 }
