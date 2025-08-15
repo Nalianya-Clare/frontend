@@ -587,7 +587,7 @@ export const categoryService = {
     return { results: [] };
   },
 
-  create: async (categoryData: CreateCategoryRequest): Promise<Category> => {
+7  create: async (categoryData: CreateCategoryRequest): Promise<Category> => {
   const response: any = await apiClient.post(API_ENDPOINTS.QUIZ.CATEGORIES, categoryData);
   
   // Handle the actual response structure you're getting
