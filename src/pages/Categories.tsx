@@ -4,6 +4,13 @@ import NavHeader from "@/components/NavHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { categoryService, type Category as ApiCategory } from "@/lib/api-services";
 import { 
   Shield, 
@@ -27,6 +34,7 @@ const Categories = () => {
   const [categories, setCategories] = useState<ApiCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<ApiCategory | null>(null);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -206,7 +214,14 @@ const Categories = () => {
                     >
                       Start Challenge
                     </Button>
-                    <Button variant="outline" size="sm">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedCategory(category);
+                      }}
+                    >
                       View Details
                     </Button>
                   </div>
@@ -227,6 +242,106 @@ const Categories = () => {
           </div>
         )}
       </div>
+
+      {/* Category Details Dialog */}
+      <Dialog open={!!selectedCategory} onOpenChange={(open) => !open && setSelectedCategory(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <div className="flex items-center space-x-4">
+              {selectedCategory && (
+                <div className={`p-3 rounded-lg ${getBgColor(selectedCategory.color)}`}>
+                  {(() => {
+                    const IconComponent = getIconComponent(selectedCategory.icon);
+                    return <IconComponent className={`h-8 w-8 ${getTextColor(selectedCategory.color)}`} />;
+                  })()}
+                </div>
+              )}
+              <div className="flex-1">
+                <DialogTitle className="text-2xl">{selectedCategory?.name}</DialogTitle>
+                <DialogDescription className="text-base mt-1">
+                  Explore this cybersecurity module
+                </DialogDescription>
+              </div>
+            </div>
+          </DialogHeader>
+
+          <div className="space-y-6 mt-4">
+            {/* Description */}
+            <div className="space-y-2">
+              <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+                About This Module
+              </h3>
+              <p className="text-base leading-relaxed">
+                {selectedCategory?.description}
+              </p>
+            </div>
+
+            {/* Stats */}
+            <div className="grid grid-cols-2 gap-4 pt-4 border-t">
+              <div className="flex items-center space-x-3 p-3 bg-muted/50 rounded-lg">
+                <Target className="h-5 w-5 text-primary" />
+                <div>
+                  <p className="text-xs text-muted-foreground">Available Quizzes</p>
+                  <p className="font-semibold text-lg">{selectedCategory?.quiz_count}</p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-3 p-3 bg-muted/50 rounded-lg">
+                <Zap className="h-5 w-5 text-accent" />
+                <div>
+                  <p className="text-xs text-muted-foreground">Status</p>
+                  <p className="font-semibold text-lg">
+                    {selectedCategory?.is_active ? 'Active' : 'Inactive'}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* What You'll Learn */}
+            <div className="space-y-3 pt-4 border-t">
+              <h3 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">
+                What You'll Learn
+              </h3>
+              <div className="grid gap-2">
+                <div className="flex items-start space-x-2">
+                  <Shield className="h-4 w-4 text-primary mt-1 flex-shrink-0" />
+                  <span className="text-sm">Core concepts and fundamentals of {selectedCategory?.name}</span>
+                </div>
+                <div className="flex items-start space-x-2">
+                  <Target className="h-4 w-4 text-primary mt-1 flex-shrink-0" />
+                  <span className="text-sm">Practical skills through hands-on quizzes</span>
+                </div>
+                <div className="flex items-start space-x-2">
+                  <Zap className="h-4 w-4 text-primary mt-1 flex-shrink-0" />
+                  <span className="text-sm">Industry-relevant knowledge and best practices</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-3 pt-4 border-t">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setSelectedCategory(null)}
+              >
+                Close
+              </Button>
+              <Button
+                variant="cyber"
+                className="flex-1"
+                onClick={() => {
+                  if (selectedCategory) {
+                    navigate(`/category/${selectedCategory.id}/quizzes`);
+                    setSelectedCategory(null);
+                  }
+                }}
+              >
+                Start Challenge
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
