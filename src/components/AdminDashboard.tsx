@@ -202,6 +202,10 @@ useEffect(() => {
   const [showCreateCategoryDialog, setShowCreateCategoryDialog] = useState(false);
   const [showEditCategoryDialog, setShowEditCategoryDialog] = useState(false);
 
+  // Quiz editing state
+  const [editingQuiz, setEditingQuiz] = useState<Quiz | null>(null);
+  const [showEditQuizDialog, setShowEditQuizDialog] = useState(false);
+
   // User creation form state
   const [newUser, setNewUser] = useState<CreateUserRequest>({
     email: "",
@@ -525,9 +529,115 @@ useEffect(() => {
     });
   };
 
+  const handleEditQuiz = async (quiz: Quiz) => {
+    setLoading(true);
+    try {
+      // Fetch full quiz details including questions
+      const fullQuiz = await quizService.getById(quiz.id);
+
+      setEditingQuiz(quiz);
+
+      // Transform quiz data to match the form structure
+      setNewQuiz({
+        title: fullQuiz.title,
+        description: fullQuiz.description,
+        category: fullQuiz.category,
+        difficulty: fullQuiz.difficulty,
+        time_limit: fullQuiz.time_limit,
+        total_questions: fullQuiz.total_questions,
+        pass_score: fullQuiz.pass_score,
+        points_reward: fullQuiz.points_reward,
+        start_time: "",
+        questions_data: fullQuiz.questions?.map(q => ({
+          question_text: q.question_text,
+          question_type: q.question_type,
+          explanation: q.explanation,
+          points: q.points,
+          order: q.order,
+          answers: q.answers.map(a => ({
+            answer_text: a.answer_text,
+            is_correct: a.is_correct,
+            order: a.order
+          }))
+        })) || []
+      });
+
+      setShowEditQuizDialog(true);
+    } catch (error) {
+      console.error('Error loading quiz details:', error);
+      toast({
+        title: "Error",
+        description: "Failed to load quiz details",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUpdateQuiz = async () => {
+    if (!editingQuiz) return;
+
+    if (!newQuiz.title || !newQuiz.description || !newQuiz.category) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const quizToUpdate = {
+        title: newQuiz.title,
+        description: newQuiz.description,
+        category: newQuiz.category,
+        difficulty: newQuiz.difficulty,
+        time_limit: newQuiz.time_limit,
+        pass_score: newQuiz.pass_score,
+        points_reward: newQuiz.points_reward,
+        total_questions: newQuiz.questions_data?.length || 0
+      };
+
+      await adminService.updateQuiz(editingQuiz.id, quizToUpdate);
+
+      toast({
+        title: "Success",
+        description: "Quiz updated successfully",
+      });
+
+      setEditingQuiz(null);
+      setShowEditQuizDialog(false);
+      setNewQuiz({
+        title: "",
+        description: "",
+        category: 0,
+        difficulty: "easy",
+        time_limit: 30,
+        total_questions: 0,
+        pass_score: 70,
+        points_reward: 100,
+        start_time: "",
+        questions_data: []
+      });
+
+      loadQuizzes();
+    } catch (error) {
+      console.error('Error updating quiz:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update quiz",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleDeleteQuiz = async (id: number) => {
     if (!confirm('Are you sure you want to delete this quiz?')) return;
-    
+
     setLoading(true);
     try {
       await adminService.deleteQuiz(id);
@@ -898,7 +1008,7 @@ useEffect(() => {
                   <span className="px-2 py-1 rounded text-xs bg-success/20 text-success">
                     Active
                   </span>
-                  <Button size="sm" variant="ghost" onClick={() => handleDeleteQuiz(quiz.id)}>
+                  <Button size="sm" variant="ghost" onClick={() => handleEditQuiz(quiz)}>
                     <Edit className="h-4 w-4" />
                   </Button>
                 </div>
@@ -1283,7 +1393,7 @@ useEffect(() => {
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <Button size="sm" variant="ghost">
+                    <Button size="sm" variant="ghost" onClick={() => handleEditQuiz(quiz)}>
                       <Edit className="h-4 w-4" />
                     </Button>
                     <Button size="sm" variant="ghost" onClick={() => handleDeleteQuiz(quiz.id)}>
@@ -1301,6 +1411,170 @@ useEffect(() => {
           )}
         </CardContent>
       </Card>
+
+      {/* Edit Quiz Dialog */}
+      <Dialog open={showEditQuizDialog} onOpenChange={(open) => {
+        setShowEditQuizDialog(open);
+        if (!open) {
+          setEditingQuiz(null);
+          setNewQuiz({
+            title: "",
+            description: "",
+            category: 0,
+            difficulty: "easy",
+            time_limit: 30,
+            total_questions: 0,
+            pass_score: 70,
+            points_reward: 100,
+            start_time: "",
+            questions_data: []
+          });
+        }
+      }}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Edit Quiz: {editingQuiz?.title}</DialogTitle>
+            <DialogDescription>
+              Update quiz information. Note: Question editing coming soon.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-6 mt-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="editCategory">Category</Label>
+                <Select
+                  value={newQuiz.category.toString()}
+                  onValueChange={(value) => setNewQuiz(prev => ({ ...prev, category: parseInt(value) }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((category) => (
+                      <SelectItem key={category.id} value={category.id.toString()}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="editDifficulty">Difficulty</Label>
+                <Select
+                  value={newQuiz.difficulty}
+                  onValueChange={(value: 'easy' | 'medium' | 'hard') => setNewQuiz(prev => ({ ...prev, difficulty: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select difficulty" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="easy">Easy</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="hard">Hard</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="editTitle">Quiz Title</Label>
+              <Input
+                id="editTitle"
+                placeholder="Enter quiz title..."
+                value={newQuiz.title}
+                onChange={(e) => setNewQuiz(prev => ({ ...prev, title: e.target.value }))}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="editDescription">Description</Label>
+              <Textarea
+                id="editDescription"
+                placeholder="Enter quiz description..."
+                className="min-h-[100px]"
+                value={newQuiz.description}
+                onChange={(e) => setNewQuiz(prev => ({ ...prev, description: e.target.value }))}
+              />
+            </div>
+
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="editTimeLimit">Time Limit (minutes)</Label>
+                <Input
+                  id="editTimeLimit"
+                  type="number"
+                  placeholder="30"
+                  value={newQuiz.time_limit}
+                  onChange={(e) => setNewQuiz(prev => ({ ...prev, time_limit: parseInt(e.target.value) || 30 }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="editPassScore">Pass Score (%)</Label>
+                <Input
+                  id="editPassScore"
+                  type="number"
+                  placeholder="70"
+                  value={newQuiz.pass_score}
+                  onChange={(e) => setNewQuiz(prev => ({ ...prev, pass_score: parseInt(e.target.value) || 70 }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="editPointsReward">Points Reward</Label>
+                <Input
+                  id="editPointsReward"
+                  type="number"
+                  placeholder="100"
+                  value={newQuiz.points_reward}
+                  onChange={(e) => setNewQuiz(prev => ({ ...prev, points_reward: parseInt(e.target.value) || 100 }))}
+                />
+              </div>
+            </div>
+
+            {/* Display existing questions (read-only for now) */}
+            {newQuiz.questions_data && newQuiz.questions_data.length > 0 && (
+              <div className="space-y-2">
+                <Label className="text-base">Questions ({newQuiz.questions_data.length})</Label>
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {newQuiz.questions_data.map((question, index) => (
+                    <div key={index} className="p-3 border border-border rounded-lg bg-muted/10">
+                      <div className="font-medium text-sm">{question.question_text}</div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        Type: {question.question_type} • Points: {question.points} • {question.answers.length} answers
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="flex space-x-4 pt-4 border-t">
+              <Button variant="ghost" onClick={() => {
+                setShowEditQuizDialog(false);
+                setEditingQuiz(null);
+                setNewQuiz({
+                  title: "",
+                  description: "",
+                  category: 0,
+                  difficulty: "easy",
+                  time_limit: 30,
+                  total_questions: 0,
+                  pass_score: 70,
+                  points_reward: 100,
+                  start_time: "",
+                  questions_data: []
+                });
+              }}>
+                Cancel
+              </Button>
+              <Button variant="cyber" onClick={handleUpdateQuiz} disabled={loading} className="flex-1">
+                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                Update Quiz
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 
