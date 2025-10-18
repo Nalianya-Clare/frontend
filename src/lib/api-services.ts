@@ -550,6 +550,44 @@ export const resourceService = {
       throw new Error('Failed to fetch resource');
     }
   },
+
+  getByQuizId: async (quizId: number): Promise<Resource[]> => {
+    try {
+      const response: any = await apiClient.get(`${API_ENDPOINTS.QUIZ.RESOURCES}/by-quiz/${quizId}`);
+
+      console.log(`Resources for quiz ${quizId}:`, response);
+
+      // Handle the specific nested structure from the API
+      if (response && response.success && response.response?.[0]?.details?.[0]?.resources) {
+        return response.response[0].details[0].resources as Resource[];
+      }
+
+      // Check if response is a direct array
+      if (Array.isArray(response)) {
+        return response as Resource[];
+      }
+
+      // Check if response has results property
+      if (response && typeof response === 'object' && response.results) {
+        return response.results as Resource[];
+      }
+
+      // Handle other nested structures
+      if (response && response.success) {
+        if (response.response?.[0]?.details?.[0]?.results) {
+          return response.response[0].details[0].results;
+        }
+        if (Array.isArray(response.response)) {
+          return response.response as unknown as Resource[];
+        }
+      }
+
+      return [];
+    } catch (error) {
+      console.error(`Error fetching resources for quiz ${quizId}:`, error);
+      return []; // Return empty array instead of throwing
+    }
+  },
 };
 
 // API Services

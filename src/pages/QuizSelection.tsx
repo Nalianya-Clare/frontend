@@ -4,17 +4,19 @@ import NavHeader from "@/components/NavHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { categoryService, quizService, type Quiz, type Category } from "@/lib/api-services";
-import { 
-  Clock, 
-  Users, 
-  Target, 
+import { categoryService, quizService, resourceService, type Quiz, type Category, type Resource } from "@/lib/api-services";
+import {
+  Clock,
+  Users,
+  Target,
   Trophy,
   ArrowLeft,
   Play,
   Loader2,
   Star,
-  Zap
+  Zap,
+  FileText,
+  Download
 } from "lucide-react";
 
 const QuizSelection = () => {
@@ -28,21 +30,39 @@ const QuizSelection = () => {
   useEffect(() => {
     const fetchData = async () => {
       if (!categoryId) return;
-      
+
       try {
         setLoading(true);
-        
-        // Fetch category details and quizzes in parallel
+
+        // Fetch category details and quizzes list
         const [categoryResponse, quizzesResponse] = await Promise.all([
           categoryService.getById(Number(categoryId)),
           quizService.getAll({ category: Number(categoryId) })
         ]);
-        
+
         console.log('Category Response:', categoryResponse);
         console.log('Quizzes Response:', quizzesResponse);
-        
+
+        // Fetch resources for each quiz
+        const quizzesWithResources = await Promise.all(
+          (quizzesResponse.results || []).map(async (quiz) => {
+            try {
+              const resources = await resourceService.getByQuizId(quiz.id);
+              console.log(`Quiz ${quiz.id} resources:`, resources);
+              return {
+                ...quiz,
+                resources: resources
+              };
+            } catch (error) {
+              console.error(`Failed to fetch resources for quiz ${quiz.id}:`, error);
+              return quiz; // Return quiz without resources if fetch fails
+            }
+          })
+        );
+
+        console.log('All quizzes with resources:', quizzesWithResources);
         setCategory(categoryResponse);
-        setQuizzes(quizzesResponse.results || []);
+        setQuizzes(quizzesWithResources);
         setError(null);
       } catch (err) {
         setError('Failed to load quizzes');
@@ -183,7 +203,39 @@ const QuizSelection = () => {
                 <p className="text-muted-foreground text-sm line-clamp-3">
                   {quiz.description}
                 </p>
-                
+
+                {/* Resources Section */}
+                {quiz.resources && quiz.resources.length > 0 && (
+                  <div className="border-t pt-3 space-y-2">
+                    <div className="flex items-center space-x-2 text-sm font-semibold">
+                      <FileText className="h-4 w-4 text-primary" />
+                      <span>Resources ({quiz.resources.length})</span>
+                    </div>
+                    <div className="space-y-1.5">
+                      {quiz.resources.map((resource) => (
+                        <div
+                          key={resource.id}
+                          className="flex items-center justify-between text-xs bg-muted/30 rounded p-2"
+                        >
+                          <span className="truncate flex-1">{resource.description}</span>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0 ml-2"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const url = resource.raw_file || resource.image;
+                              if (url) window.open(url, '_blank');
+                            }}
+                          >
+                            <Download className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
                 <div className="space-y-3">
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div className="flex items-center space-x-2">
