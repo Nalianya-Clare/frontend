@@ -18,9 +18,9 @@ All colors MUST be HSL.
     --popover: 210 25% 12%;
     --popover-foreground: 120 100% 85%;
 
-    /* Matrix Green Primary */
-    --primary: 120 100% 50%;
-    --primary-foreground: 210 30% 8%;
+    /* Corporate Blue Primary */
+    --primary: 217 91% 60%;
+    --primary-foreground: 0 0% 100%;
 
     /* Electric Blue Secondary */
     --secondary: 200 100% 50%;
@@ -47,17 +47,17 @@ All colors MUST be HSL.
     --success-foreground: 210 30% 8%;
 
     /* Cyber Borders */
-    --border: 120 30% 25%;
-    --input: 120 20% 15%;
-    --ring: 120 100% 50%;
+    --border: 217 30% 25%;
+    --input: 217 20% 15%;
+    --ring: 217 91% 60%;
 
     /* Gradient Definitions */
-    --gradient-primary: linear-gradient(135deg, hsl(120 100% 50%), hsl(200 100% 50%));
-    --gradient-cyber: linear-gradient(45deg, hsl(120 100% 20%), hsl(270 100% 30%));
+    --gradient-primary: linear-gradient(135deg, hsl(217 91% 60%), hsl(200 100% 50%));
+    --gradient-cyber: linear-gradient(45deg, hsl(217 91% 40%), hsl(270 100% 30%));
     --gradient-card: linear-gradient(145deg, hsl(210 25% 12%), hsl(210 30% 15%));
 
     /* Glow Effects */
-    --glow-primary: 0 0 20px hsl(120 100% 50% / 0.3);
+    --glow-primary: 0 0 20px hsl(217 91% 60% / 0.3);
     --glow-secondary: 0 0 20px hsl(200 100% 50% / 0.3);
     --glow-accent: 0 0 20px hsl(270 100% 65% / 0.3);
 

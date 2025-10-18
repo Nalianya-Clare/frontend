@@ -95,10 +95,10 @@ export default {
 				},
 				'cyber-pulse': {
 					'0%, 100%': {
-						boxShadow: '0 0 5px hsl(120 100% 50% / 0.5)'
+						boxShadow: '0 0 5px hsl(217 91% 60% / 0.5)'
 					},
 					'50%': {
-						boxShadow: '0 0 20px hsl(120 100% 50% / 0.8), 0 0 30px hsl(120 100% 50% / 0.4)'
+						boxShadow: '0 0 20px hsl(217 91% 60% / 0.8), 0 0 30px hsl(217 91% 60% / 0.4)'
 					}
 				},
 				'matrix-rain': {
@@ -111,10 +111,10 @@ export default {
 				},
 				'glow': {
 					'0%, 100%': {
-						filter: 'drop-shadow(0 0 5px hsl(120 100% 50% / 0.5))'
+						filter: 'drop-shadow(0 0 5px hsl(217 91% 60% / 0.5))'
 					},
 					'50%': {
-						filter: 'drop-shadow(0 0 15px hsl(120 100% 50% / 0.8))'
+						filter: 'drop-shadow(0 0 15px hsl(217 91% 60% / 0.8))'
 					}
 				}
 			},
