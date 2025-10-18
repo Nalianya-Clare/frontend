@@ -651,13 +651,25 @@ export const categoryService = {
 
   update: async (id: number, categoryData: Partial<CreateCategoryRequest>): Promise<Category> => {
     const response: any = await apiClient.patch(`${API_ENDPOINTS.QUIZ.CATEGORIES}/${id}`, categoryData);
-    
-    // Handle the response structure
+
+    // Handle different response structures
     if (response.success && response.response?.[0]?.details?.[0]?.data) {
       return response.response[0].details[0].data;
     }
-    
-    throw new Error('Failed to update category');
+
+    // Handle direct data in response
+    if (response.data) {
+      return response.data;
+    }
+
+    // If response itself is the category data
+    if (response.id) {
+      return response;
+    }
+
+    // If we got a 200 response, consider it successful even if structure is different
+    console.warn('Update successful but unexpected response structure:', response);
+    return response as Category;
   },
 
   delete: async (id: number): Promise<void> => {

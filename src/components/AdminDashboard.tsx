@@ -5,13 +5,13 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { 
-  Settings, 
-  Plus, 
-  Users, 
-  Target, 
-  Calendar, 
-  BarChart3, 
+import {
+  Settings,
+  Plus,
+  Users,
+  Target,
+  Calendar,
+  BarChart3,
   FileText,
   Clock,
   Shield,
@@ -21,6 +21,13 @@ import {
   Crown,
   UserCheck
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { adminService, quizService, categoryService, resourceService, type User, type Quiz, type Category, type Resource, type CreateQuizRequest, type CreateQuestionRequest, type CreateAnswerRequest, type AdminStats, type CreateUserRequest, type UpdateUserRequest, type UserListResponse } from "@/lib/api-services";
 import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/contexts/AuthContext";
@@ -180,6 +187,20 @@ useEffect(() => {
     icon: "F",
     color: "#FF5733"
   });
+
+  // Category editing state
+  const [editingCategory, setEditingCategory] = useState<Category | null>(null);
+  const [editCategoryData, setEditCategoryData] = useState<{
+    name?: string;
+    description?: string;
+    icon?: string;
+    color?: string;
+    is_active?: boolean;
+  }>({});
+
+  // Dialog states for category management
+  const [showCreateCategoryDialog, setShowCreateCategoryDialog] = useState(false);
+  const [showEditCategoryDialog, setShowEditCategoryDialog] = useState(false);
 
   // User creation form state
   const [newUser, setNewUser] = useState<CreateUserRequest>({
@@ -577,15 +598,16 @@ useEffect(() => {
         title: "Success",
         description: "Category created successfully",
       });
-      
-      // Reset form
+
+      // Reset form and close dialog
       setNewCategory({
         name: "",
         description: "",
         icon: "",
         color: ""
       });
-      
+      setShowCreateCategoryDialog(false);
+
       // Reload categories
       loadDashboardData();
     } catch (error) {
@@ -600,9 +622,57 @@ useEffect(() => {
     }
   };
 
+  const handleEditCategory = (category: Category) => {
+    setEditingCategory(category);
+    setEditCategoryData({
+      name: category.name,
+      description: category.description,
+      icon: category.icon,
+      color: category.color,
+      is_active: category.is_active
+    });
+    setShowEditCategoryDialog(true);
+  };
+
+  const handleUpdateCategory = async () => {
+    if (!editingCategory) return;
+
+    if (!editCategoryData.name || !editCategoryData.description) {
+      toast({
+        title: "Error",
+        description: "Please fill in category name and description",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setLoading(true);
+    try {
+      await categoryService.update(editingCategory.id, editCategoryData);
+      toast({
+        title: "Success",
+        description: "Category updated successfully",
+      });
+
+      setEditingCategory(null);
+      setEditCategoryData({});
+      setShowEditCategoryDialog(false);
+      loadDashboardData();
+    } catch (error) {
+      console.error('Error updating category:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update category",
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleDeleteCategory = async (id: number) => {
     if (!confirm('Are you sure you want to delete this category?')) return;
-    
+
     setLoading(true);
     try {
       await categoryService.delete(id);
@@ -1660,77 +1730,11 @@ useEffect(() => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Modules Management</h2>
-        <Button variant="cyber" onClick={() => loadDashboardData()}>
+        <Button variant="cyber" onClick={() => setShowCreateCategoryDialog(true)}>
           <Plus className="mr-2 h-4 w-4" />
-          Refresh Modules
+          Create Module
         </Button>
       </div>
-
-      {/* Create New Module Form */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Create New Module</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="categoryName">Module Name</Label>
-              <Input 
-                id="categoryName" 
-                placeholder="Enter category name..."
-                value={newCategory.name}
-                onChange={(e) => setNewCategory(prev => ({ ...prev, name: e.target.value }))}
-              />
-            </div>
-
-            {/* <div className="space-y-2">
-              <Label htmlFor="categoryIcon">Icon (optional)</Label>
-              <Input 
-                id="categoryIcon" 
-                placeholder="Icon name or emoji..."
-                value={newCategory.icon}
-                onChange={(e) => setNewCategory(prev => ({ ...prev, icon: e.target.value }))}
-              />
-            </div> */}
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="categoryDescription">Description</Label>
-            <Textarea 
-              id="categoryDescription" 
-              placeholder="Enter category description..."
-              className="min-h-[100px]"
-              value={newCategory.description}
-              onChange={(e) => setNewCategory(prev => ({ ...prev, description: e.target.value }))}
-            />
-          </div>
-
-          {/* <div className="space-y-2">
-            <Label htmlFor="categoryColor">Color (optional)</Label>
-            <Input 
-              id="categoryColor" 
-              placeholder="Color code (e.g., #FF5733)"
-              value="#FF5733"
-              onChange={(e) => setNewCategory(prev => ({ ...prev, color: e.target.value }))}
-            />
-          </div> */}
-
-          <div className="flex space-x-4">
-            <Button variant="cyber" onClick={handleCreateCategory} disabled={loading}>
-              {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              Create Module
-            </Button>
-            <Button variant="ghost" onClick={() => setNewCategory({
-              name: "",
-              description: "",
-              icon: "",
-              color: ""
-            })}>
-              Reset Form
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
 
       {/* Existing Categories */}
       <Card>
@@ -1768,9 +1772,9 @@ useEffect(() => {
                     }`}>
                       {category.is_active ? 'Active' : 'Inactive'}
                     </span>
-                    {/* <Button size="sm" variant="ghost">
+                    <Button size="sm" variant="ghost" onClick={() => handleEditCategory(category)}>
                       <Edit className="h-4 w-4" />
-                    </Button> */}
+                    </Button>
                     <Button size="sm" variant="ghost" onClick={() => handleDeleteCategory(category.id)}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -1786,6 +1790,122 @@ useEffect(() => {
           )}
         </CardContent>
       </Card>
+
+      {/* Create Category Dialog */}
+      <Dialog open={showCreateCategoryDialog} onOpenChange={setShowCreateCategoryDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Create New Module</DialogTitle>
+            <DialogDescription>
+              Add a new category module to your cybersecurity platform
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-6 mt-4">
+            <div className="space-y-2">
+              <Label htmlFor="categoryName">Module Name</Label>
+              <Input
+                id="categoryName"
+                placeholder="Enter category name..."
+                value={newCategory.name}
+                onChange={(e) => setNewCategory(prev => ({ ...prev, name: e.target.value }))}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="categoryDescription">Description</Label>
+              <Textarea
+                id="categoryDescription"
+                placeholder="Enter category description..."
+                className="min-h-[100px]"
+                value={newCategory.description}
+                onChange={(e) => setNewCategory(prev => ({ ...prev, description: e.target.value }))}
+              />
+            </div>
+
+            <div className="flex space-x-4 pt-4 border-t">
+              <Button variant="ghost" onClick={() => {
+                setShowCreateCategoryDialog(false);
+                setNewCategory({
+                  name: "",
+                  description: "",
+                  icon: "",
+                  color: ""
+                });
+              }}>
+                Cancel
+              </Button>
+              <Button variant="cyber" onClick={handleCreateCategory} disabled={loading} className="flex-1">
+                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                Create Module
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Category Dialog */}
+      <Dialog open={showEditCategoryDialog} onOpenChange={(open) => {
+        setShowEditCategoryDialog(open);
+        if (!open) {
+          setEditingCategory(null);
+          setEditCategoryData({});
+        }
+      }}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Edit Module: {editingCategory?.name}</DialogTitle>
+            <DialogDescription>
+              Update the module information
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-6 mt-4">
+            <div className="space-y-2">
+              <Label htmlFor="editCategoryName">Module Name</Label>
+              <Input
+                id="editCategoryName"
+                placeholder="Enter category name..."
+                value={editCategoryData.name || ''}
+                onChange={(e) => setEditCategoryData(prev => ({ ...prev, name: e.target.value }))}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="editCategoryDescription">Description</Label>
+              <Textarea
+                id="editCategoryDescription"
+                placeholder="Enter category description..."
+                className="min-h-[100px]"
+                value={editCategoryData.description || ''}
+                onChange={(e) => setEditCategoryData(prev => ({ ...prev, description: e.target.value }))}
+              />
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="editCategoryActive"
+                checked={editCategoryData.is_active ?? false}
+                onChange={(e) => setEditCategoryData(prev => ({ ...prev, is_active: e.target.checked }))}
+              />
+              <Label htmlFor="editCategoryActive">Module Active</Label>
+            </div>
+
+            <div className="flex space-x-4 pt-4 border-t">
+              <Button variant="ghost" onClick={() => {
+                setShowEditCategoryDialog(false);
+                setEditingCategory(null);
+                setEditCategoryData({});
+              }}>
+                Cancel
+              </Button>
+              <Button variant="cyber" onClick={handleUpdateCategory} disabled={loading} className="flex-1">
+                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                Update Module
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 
