@@ -4,6 +4,13 @@ import NavHeader from "@/components/NavHeader";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { categoryService, quizService, resourceService, type Quiz, type Category, type Resource } from "@/lib/api-services";
 import {
   Clock,
@@ -26,6 +33,7 @@ const QuizSelection = () => {
   const [quizzes, setQuizzes] = useState<Quiz[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [previewQuiz, setPreviewQuiz] = useState<Quiz | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -267,7 +275,11 @@ const QuizSelection = () => {
                     <Play className="h-4 w-4" />
                     <span>Start Quiz</span>
                   </Button>
-                  <Button variant="outline" size="sm">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPreviewQuiz(quiz)}
+                  >
                     Preview
                   </Button>
                 </div>
@@ -287,6 +299,112 @@ const QuizSelection = () => {
           </div>
         )}
       </div>
+
+      {/* Preview Dialog */}
+      <Dialog open={!!previewQuiz} onOpenChange={(open) => !open && setPreviewQuiz(null)}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <div className="flex items-center justify-between">
+              <DialogTitle className="text-2xl">{previewQuiz?.title}</DialogTitle>
+              <Badge className={previewQuiz ? getDifficultyColor(previewQuiz.difficulty) : ''}>
+                {previewQuiz?.difficulty.charAt(0).toUpperCase()}{previewQuiz?.difficulty.slice(1)}
+              </Badge>
+            </div>
+            <DialogDescription className="text-base">
+              {previewQuiz?.description}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-6 mt-4">
+            {/* Quiz Details */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="flex items-center space-x-3 p-3 bg-muted/50 rounded-lg">
+                <Target className="h-5 w-5 text-primary" />
+                <div>
+                  <p className="text-xs text-muted-foreground">Questions</p>
+                  <p className="font-semibold">{previewQuiz?.total_questions}</p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-3 p-3 bg-muted/50 rounded-lg">
+                <Clock className="h-5 w-5 text-secondary" />
+                <div>
+                  <p className="text-xs text-muted-foreground">Time Limit</p>
+                  <p className="font-semibold">{previewQuiz?.time_limit} minutes</p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-3 p-3 bg-muted/50 rounded-lg">
+                <Star className="h-5 w-5 text-accent" />
+                <div>
+                  <p className="text-xs text-muted-foreground">Pass Score</p>
+                  <p className="font-semibold">{previewQuiz?.pass_score}%</p>
+                </div>
+              </div>
+              <div className="flex items-center space-x-3 p-3 bg-muted/50 rounded-lg">
+                <Trophy className="h-5 w-5 text-primary" />
+                <div>
+                  <p className="text-xs text-muted-foreground">Points Reward</p>
+                  <p className="font-semibold">{previewQuiz?.points_reward} XP</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Resources Section */}
+            {previewQuiz?.resources && previewQuiz.resources.length > 0 && (
+              <div className="border-t pt-4 space-y-3">
+                <div className="flex items-center space-x-2 font-semibold">
+                  <FileText className="h-5 w-5 text-primary" />
+                  <span>Study Resources ({previewQuiz.resources.length})</span>
+                </div>
+                <div className="space-y-2">
+                  {previewQuiz.resources.map((resource) => (
+                    <div
+                      key={resource.id}
+                      className="flex items-center justify-between p-3 bg-muted/30 rounded-lg hover:bg-muted/50 transition-colors"
+                    >
+                      <span className="text-sm">{resource.description}</span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="h-8 w-8 p-0"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          const url = resource.raw_file || resource.image;
+                          if (url) window.open(url, '_blank');
+                        }}
+                      >
+                        <Download className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Action Buttons */}
+            <div className="flex gap-3 pt-4 border-t">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setPreviewQuiz(null)}
+              >
+                Close
+              </Button>
+              <Button
+                variant="cyber"
+                className="flex-1 flex items-center justify-center space-x-2"
+                onClick={() => {
+                  if (previewQuiz) {
+                    handleStartQuiz(previewQuiz.id);
+                  }
+                }}
+              >
+                <Play className="h-4 w-4" />
+                <span>Start Quiz</span>
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
