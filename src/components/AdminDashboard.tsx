@@ -997,7 +997,11 @@ useEffect(() => {
                 <Loader2 className="h-6 w-6 animate-spin" />
               </div>
             ) : quizzes.slice(0, 4).map((quiz) => (
-              <div key={quiz.id} className="flex items-center justify-between p-3 rounded-lg bg-muted/20 border border-border">
+              <div
+                key={quiz.id}
+                className="flex items-center justify-between p-3 rounded-lg bg-muted/20 border border-border cursor-pointer hover:bg-muted/30 transition-colors"
+                onClick={() => setActiveTab("questions")}
+              >
                 <div>
                   <div className="font-medium">{quiz.title}</div>
                   <div className="text-sm text-muted-foreground">
@@ -1008,9 +1012,6 @@ useEffect(() => {
                   <span className="px-2 py-1 rounded text-xs bg-success/20 text-success">
                     Active
                   </span>
-                  <Button size="sm" variant="ghost" onClick={() => handleEditQuiz(quiz)}>
-                    <Edit className="h-4 w-4" />
-                  </Button>
                 </div>
               </div>
             ))}
