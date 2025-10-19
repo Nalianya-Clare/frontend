@@ -15,6 +15,7 @@ import QuizResults from "./pages/QuizResults";
 import QuizTaking from "./pages/QuizTaking";
 import Leaderboard from "./pages/Leaderboard";
 import MyProgress from "./pages/MyProgress";
+import Profile from "./pages/Profile";
 import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
@@ -55,6 +56,11 @@ const App = () => (
             <Route path="/progress" element={
               <ProtectedRoute>
                 <MyProgress />
+              </ProtectedRoute>
+            } />
+            <Route path="/profile" element={
+              <ProtectedRoute>
+                <Profile />
               </ProtectedRoute>
             } />
             <Route path="/admin" element={

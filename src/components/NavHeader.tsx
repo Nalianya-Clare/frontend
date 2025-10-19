@@ -141,13 +141,17 @@ const NavHeader = () => {
                       <div className="text-xs text-muted-foreground font-normal">{user?.email}</div>
                     </DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem>
-                      <User className="mr-2 h-4 w-4" />
-                      Profile
+                    <DropdownMenuItem asChild>
+                      <Link to="/profile" className="cursor-pointer">
+                        <User className="mr-2 h-4 w-4" />
+                        Profile
+                      </Link>
                     </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <Trophy className="mr-2 h-4 w-4" />
-                      Achievements
+                    <DropdownMenuItem asChild>
+                      <Link to="/progress" className="cursor-pointer">
+                        <Trophy className="mr-2 h-4 w-4" />
+                        My Progress
+                      </Link>
                     </DropdownMenuItem>
                     <DropdownMenuItem>
                       <Settings className="mr-2 h-4 w-4" />
