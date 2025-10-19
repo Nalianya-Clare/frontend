@@ -186,11 +186,7 @@ const Leaderboard = () => {
           </Card>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex justify-center space-x-4">
-          <Button variant="cyber">View My Rank</Button>
-          <Button variant="neon">Join Competition</Button>
-        </div>
+     
       </div>
     </div>
   );
