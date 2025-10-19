@@ -2366,68 +2366,47 @@ const renderResourceManager = () => (
       <CardContent>
         {resourceLoading ? (
           <div className="flex items-center justify-center py-8">
-            <Loader2 className="animate-spin h-6 w-6" />
+            <Loader2 className="h-6 w-6 animate-spin" />
           </div>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="space-y-4">
             {resources.map(res => (
-              <Card key={res.id} className="border border-border">
-                <CardHeader className="pb-3">
-                  <div className="flex items-center justify-between">
-                    <CardTitle className="text-lg">Resource #{res.id}</CardTitle>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => handleDeleteResource(res.id)}
-                      title="Delete resource"
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
+              <div key={res.id} className="flex items-center justify-between p-4 rounded-lg border border-border">
+                <div className="flex items-center space-x-4">
+                  <div className="w-10 h-10 rounded-lg bg-gradient-primary flex items-center justify-center text-white">
+                    📄
                   </div>
-                  {res.quiz_title && (
-                    <div className="text-sm text-muted-foreground bg-muted/20 px-2 py-1 rounded mt-2">
-                      📚 Assigned to: {res.quiz_title}
-                    </div>
-                  )}
-                </CardHeader>
-                <CardContent className="space-y-3">
                   <div>
-                    <span className="font-medium text-sm">Description:</span>
-                    <p className="text-sm text-muted-foreground mt-1">{res.description}</p>
-                  </div>
-
-                  {res.raw_file && (
-                    <div>
-                      <a
-                        href={res.raw_file}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center text-sm text-primary hover:text-primary/80 underline"
-                      >
-                        📄 Download File
-                      </a>
+                    <div className="font-medium">{res.description}</div>
+                    {res.quiz_title && (
+                      <div className="text-sm text-muted-foreground">
+                        Assigned to: {res.quiz_title}
+                      </div>
+                    )}
+                    <div className="text-xs text-muted-foreground mt-1">
+                      {res.raw_file && (
+                        <a
+                          href={res.raw_file}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center text-primary hover:text-primary/80 underline mr-3"
+                        >
+                          Download File
+                        </a>
+                      )}
+                      Uploaded: {new Date(res.uploaded_at).toLocaleDateString()}
                     </div>
-                  )}
-
-                  {res.image && (
-                    <div>
-                      <img
-                        src={res.image}
-                        alt="Resource"
-                        className="max-h-32 w-full object-cover rounded border"
-                      />
-                    </div>
-                  )}
-
-                  <div className="text-xs text-muted-foreground pt-2 border-t">
-                    Uploaded: {new Date(res.uploaded_at).toLocaleDateString()}
                   </div>
-                </CardContent>
-              </Card>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Button size="sm" variant="ghost" onClick={() => handleDeleteResource(res.id)} title="Delete resource">
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
             ))}
-            
             {resources.length === 0 && (
-              <div className="col-span-full text-center py-8 text-muted-foreground">
+              <div className="text-center py-8 text-muted-foreground">
                 No resources found. Add your first resource above.
               </div>
             )}
