@@ -2,6 +2,8 @@ import { Shield, Trophy, User, Settings, LogOut, LogIn } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useState, useEffect } from "react";
+import { progressService } from "@/lib/api-services";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,6 +16,24 @@ import {
 const NavHeader = () => {
   const location = useLocation();
   const { user, isAuthenticated, logout } = useAuth();
+  const [userPoints, setUserPoints] = useState<number>(0);
+
+  // Fetch user progress when authenticated
+  useEffect(() => {
+    const fetchUserProgress = async () => {
+      if (isAuthenticated) {
+        try {
+          const progress = await progressService.getUserProgress();
+          setUserPoints(progress.total_points || 0);
+        } catch (error) {
+          console.error('Error fetching user progress:', error);
+          // Keep default value of 0 on error
+        }
+      }
+    };
+
+    fetchUserProgress();
+  }, [isAuthenticated]);
 
   const isActive = (path: string) => {
     return location.pathname === path;
@@ -21,6 +41,11 @@ const NavHeader = () => {
 
   const handleLogout = () => {
     logout();
+  };
+
+  // Format number with commas for display
+  const formatNumber = (num: number) => {
+    return num.toLocaleString();
   };
 
   return (
@@ -100,7 +125,7 @@ const NavHeader = () => {
               <>
                 <div className="hidden sm:flex items-center space-x-2 text-sm">
                   <Trophy className="h-4 w-4 text-accent" />
-                  <span className="text-foreground">1,247 XP</span>
+                  <span className="text-foreground">{formatNumber(userPoints)} XP</span>
                 </div>
                 
                 <DropdownMenu>
