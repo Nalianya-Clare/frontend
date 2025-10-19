@@ -5,11 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { type GameResult, type Badge as BadgeType } from "@/lib/api-services";
-import { 
-  Trophy, 
-  Target, 
-  Clock, 
+import { type Badge as BadgeType } from "@/lib/api-services";
+import {
+  Trophy,
+  Target,
+  Clock,
   Star,
   TrendingUp,
   Award,
@@ -26,18 +26,19 @@ const QuizResults = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [showCelebration, setShowCelebration] = useState(false);
-  
+
   // Get result data from navigation state
-  const result = location.state?.result as GameResult;
+  // New API response structure: { attempt, progress, user_answers, badges_earned }
+  const result = location.state?.result;
 
   useEffect(() => {
-    if (result && result.session.score >= result.session.quiz) {
+    if (result?.attempt?.passed) {
       setShowCelebration(true);
       setTimeout(() => setShowCelebration(false), 3000);
     }
   }, [result]);
 
-  if (!result) {
+  if (!result || !result.attempt) {
     return (
       <div className="min-h-screen bg-background">
         <NavHeader />
@@ -51,11 +52,18 @@ const QuizResults = () => {
     );
   }
 
-  const { session, points_earned, badges_earned, new_achievements, rank_change } = result;
-  const scorePercentage = (session.correct_answers / session.total_questions) * 100;
-  const isPassed = scorePercentage >= 70; // Assuming 70% is passing
-  const timeInMinutes = Math.floor(session.time_taken / 60);
-  const timeInSeconds = session.time_taken % 60;
+  const { attempt, progress, user_answers, badges_earned } = result;
+
+  // Calculate values from the new response structure
+  const scorePercentage = attempt.percentage || 0;
+  const isPassed = attempt.passed || false;
+  const timeInMinutes = Math.floor((attempt.time_taken || 0) / 60);
+  const timeInSeconds = (attempt.time_taken || 0) % 60;
+  const pointsEarned = attempt.score || 0;
+
+  // Count correct and total answers from user_answers array
+  const correctAnswers = user_answers?.filter((ans: any) => ans.is_correct).length || 0;
+  const totalQuestions = user_answers?.length || 1;
 
   const getScoreColor = () => {
     if (scorePercentage >= 90) return "text-green-500";
@@ -98,24 +106,24 @@ const QuizResults = () => {
                 {isPassed ? "Well Done!" : "Keep Learning!"}
               </h2>
               <p className="text-xl text-muted-foreground">
-                You scored {session.correct_answers} out of {session.total_questions} questions correctly
+                You scored {correctAnswers} out of {totalQuestions} questions correctly
               </p>
               <div className="text-6xl font-bold text-primary">
                 {scorePercentage.toFixed(1)}%
               </div>
             </div>
-            
+
             <Progress value={scorePercentage} className="h-3 w-full max-w-md mx-auto" />
-            
+
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mt-8">
               <div className="text-center space-y-2">
-                <div className="text-3xl font-bold text-accent">+{points_earned}</div>
+                <div className="text-3xl font-bold text-accent">+{pointsEarned}</div>
                 <div className="text-sm text-muted-foreground flex items-center justify-center">
                   <Zap className="h-4 w-4 mr-1" />
                   XP Earned
                 </div>
               </div>
-              
+
               <div className="text-center space-y-2">
                 <div className="text-3xl font-bold text-secondary">
                   {timeInMinutes}:{timeInSeconds.toString().padStart(2, '0')}
@@ -125,19 +133,19 @@ const QuizResults = () => {
                   Time Taken
                 </div>
               </div>
-              
+
               <div className="text-center space-y-2">
                 <div className="text-3xl font-bold text-primary">
-                  {rank_change > 0 ? '+' : ''}{rank_change}
+                  {progress?.current_streak || 0}
                 </div>
                 <div className="text-sm text-muted-foreground flex items-center justify-center">
                   <TrendingUp className="h-4 w-4 mr-1" />
-                  Rank Change
+                  Current Streak
                 </div>
               </div>
-              
+
               <div className="text-center space-y-2">
-                <div className="text-3xl font-bold text-accent">{badges_earned.length}</div>
+                <div className="text-3xl font-bold text-accent">{badges_earned?.length || 0}</div>
                 <div className="text-sm text-muted-foreground flex items-center justify-center">
                   <Medal className="h-4 w-4 mr-1" />
                   New Badges
@@ -161,28 +169,28 @@ const QuizResults = () => {
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Correct Answers</span>
                 <div className="flex items-center space-x-2">
-                  <span className="font-bold text-green-500">{session.correct_answers}</span>
-                  <span className="text-muted-foreground">/ {session.total_questions}</span>
+                  <span className="font-bold text-green-500">{correctAnswers}</span>
+                  <span className="text-muted-foreground">/ {totalQuestions}</span>
                 </div>
               </div>
-              
+
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Accuracy</span>
                 <span className={`font-bold ${getScoreColor()}`}>
                   {scorePercentage.toFixed(1)}%
                 </span>
               </div>
-              
+
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Status</span>
                 <Badge variant={isPassed ? "default" : "destructive"}>
                   {isPassed ? "PASSED" : "FAILED"}
                 </Badge>
               </div>
-              
+
               <div className="flex justify-between items-center">
                 <span className="text-muted-foreground">Points Earned</span>
-                <span className="font-bold text-accent">+{points_earned} XP</span>
+                <span className="font-bold text-accent">+{pointsEarned} XP</span>
               </div>
             </CardContent>
           </Card>
@@ -196,16 +204,16 @@ const QuizResults = () => {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              {badges_earned.length > 0 ? (
+              {badges_earned && badges_earned.length > 0 ? (
                 <div className="space-y-3">
-                  {badges_earned.map((badge) => (
-                    <div key={badge.id} className="flex items-center space-x-3 p-3 rounded-lg bg-muted/20">
+                  {badges_earned.map((badge: any, index: number) => (
+                    <div key={badge?.id || index} className="flex items-center space-x-3 p-3 rounded-lg bg-muted/20">
                       <div className="w-10 h-10 rounded-full bg-primary/20 flex items-center justify-center">
                         <Trophy className="h-5 w-5 text-primary" />
                       </div>
                       <div className="flex-1">
-                        <div className="font-medium">{badge.name}</div>
-                        <div className="text-sm text-muted-foreground">{badge.description}</div>
+                        <div className="font-medium">{badge?.name || 'Achievement'}</div>
+                        <div className="text-sm text-muted-foreground">{badge?.description || 'Well done!'}</div>
                       </div>
                       <Badge className="bg-gradient-to-r from-yellow-400 to-orange-500">
                         NEW
@@ -218,17 +226,6 @@ const QuizResults = () => {
                   <Award className="h-12 w-12 text-muted-foreground mx-auto mb-2" />
                   <p className="text-muted-foreground">No new badges earned</p>
                   <p className="text-sm text-muted-foreground">Keep improving to unlock achievements!</p>
-                </div>
-              )}
-              
-              {new_achievements.length > 0 && (
-                <div className="space-y-2">
-                  <h4 className="font-medium">New Achievements:</h4>
-                  {new_achievements.map((achievement, index) => (
-                    <Badge key={index} variant="outline">
-                      {achievement}
-                    </Badge>
-                  ))}
                 </div>
               )}
             </CardContent>

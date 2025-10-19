@@ -133,17 +133,17 @@ const QuizTaking = () => {
       setError('Please select an answer');
       return;
     }
-    
+
     setSubmitting(true);
     setError(null);
-    
+
     try {
       const timeSpent = Math.floor((Date.now() - questionStartTime) / 1000);
-      
+
       // Get the actual answer ID from the selected answer index
       const selectedAnswerObj = currentQuestion.answers[selectedAnswer];
       const actualAnswerId = selectedAnswerObj.id;
-      
+
       console.log('📝 Submitting answer:', {
         session_id: gameSession.session_id,
         question_id: currentQuestion.id,
@@ -153,34 +153,43 @@ const QuizTaking = () => {
       });
 
       // Call the SUBMIT_ANSWER endpoint with the actual answer ID
-      const result = await gameService.submitAnswer(
+      // The API only returns a success message, so we handle answer checking client-side
+      await gameService.submitAnswer(
         gameSession.session_id,
         currentQuestion.id,
-        actualAnswerId, // Use the actual answer ID, not the index
+        actualAnswerId,
         timeSpent
       );
 
-      console.log('✅ Answer submitted successfully:', result);
-      console.log('🔍 Result details:', {
-        is_final_question: result.is_final_question,
-        has_next_question: !!result.next_question,
-        question_number: result.question_number,
-        total_questions: result.total_questions
-      });
+      console.log('✅ Answer submitted successfully');
+
+      // Check if the answer is correct client-side
+      const isCorrect = selectedAnswerObj.is_correct;
+      const points = isCorrect ? currentQuestion.points : 0;
+
+      // Create a result object for display
+      const result = {
+        is_correct: isCorrect,
+        explanation: currentQuestion.explanation,
+        points_earned: points,
+        question_number: currentQuestionIndex + 1,
+        total_questions: gameSession.total_questions,
+        is_final_question: currentQuestionIndex >= (gameSession.all_questions.length - 1)
+      };
 
       setAnswerResult(result);
       setShowExplanation(true);
-      setTotalScore(prev => prev + result.points_earned);
+      setTotalScore(prev => prev + points);
 
       // Auto-advance after showing explanation
       setTimeout(() => {
-        if (result.is_final_question || currentQuestionIndex >= (gameSession.all_questions.length - 1)) {
+        if (result.is_final_question) {
           handleFinishGame();
         } else {
           // Move to next question using local question array
           const nextQuestionIndex = currentQuestionIndex + 1;
           const nextQuestion = gameSession.all_questions[nextQuestionIndex];
-          
+
           if (nextQuestion) {
             setCurrentQuestion(nextQuestion);
             setCurrentQuestionIndex(nextQuestionIndex);
@@ -194,7 +203,7 @@ const QuizTaking = () => {
           }
         }
       }, 3000);
-      
+
     } catch (err) {
       const errorMessage = `Failed to submit answer: ${err instanceof Error ? err.message : 'Unknown error'}`;
       setError(errorMessage);

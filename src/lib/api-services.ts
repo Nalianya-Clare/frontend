@@ -872,102 +872,84 @@ export const gameService = {
     is_final_question: boolean;
   }> => {
     console.log('Submitting answer with data:', { session_id, question_id, selected_answer_id, time_taken });
-    
+
     try {
-      // Try different parameter names and structures that the API might expect
+      // Use attempt_id as per the API response structure
       const requestData = {
-        attempt_id: session_id, // Use attempt_id since that's what we got from start game
+        attempt_id: session_id,
         question_id: question_id,
-        answer_id: selected_answer_id, // Try answer_id instead of selected_answer_id
-        selected_answer_id: selected_answer_id, // Keep this as fallback
+        answer_id: selected_answer_id,
         time_taken: time_taken,
       };
-      
+
       console.log('Sending request data:', requestData);
-      
+
       const response: any = await apiClient.post(API_ENDPOINTS.QUIZ.GAME.SUBMIT_ANSWER, requestData);
-      
+
       console.log('Submit answer response:', response);
-      
-      // Handle the API response structure
-      if (response.success && response.response?.[0]?.details?.[0]) {
-        const details = response.response[0].details[0];
-        
-        // Transform the response to match expected interface
+
+      // Handle the actual API response structure: {success: true, response: [{status_code: 200, code: "answer_submitted", details: [{message: "Answer submitted successfully"}]}]}
+      if (response.success && response.response?.[0]) {
+        const responseData = response.response[0];
+
+        // The API only returns a success message, we need to return a minimal valid response
+        // The actual answer validation and next question logic should be handled differently
+        // For now, return a basic success response
         return {
-          is_correct: details.is_correct || false,
-          explanation: details.explanation || '',
-          points_earned: details.points_earned || 0,
-          next_question: details.next_question || null,
-          question_number: details.question_number || 1,
-          total_questions: details.total_questions || 1,
-          is_final_question: details.is_final_question || false
+          is_correct: true, // We'll need to determine this differently
+          explanation: responseData.details?.[0]?.message || 'Answer submitted successfully',
+          points_earned: 0, // Not provided in the submit response
+          next_question: undefined,
+          question_number: 0,
+          total_questions: 0,
+          is_final_question: false
         };
       }
-      
+
       throw new Error('Invalid response structure from submit answer API');
     } catch (error) {
       console.error('Submit answer API error:', error);
-      
+
       // Enhanced error handling for validation errors
       if (error instanceof Error && error.message.includes('HTTP error! status: 400')) {
         throw new Error(`Validation error: Please check if all required fields are provided correctly`);
       }
-      
+
       throw new Error(`Failed to submit answer: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   },
   
   finishGame: async (session_id: number): Promise<{
-    session: GameSession;
-    final_score: number;
-    points_earned: number;
+    attempt: any;
+    progress: any;
+    user_answers: any[];
     badges_earned: Badge[];
-    new_achievements: string[];
-    rank_change: number;
-    performance_summary: {
-      total_questions: number;
-      correct_answers: number;
-      incorrect_answers: number;
-      accuracy_percentage: number;
-      time_taken: number;
-    };
   }> => {
     console.log('Finishing game for session:', session_id);
-    
+
     try {
-      // Try different parameter names that the API might expect
+      // Use attempt_id as per the API structure
       const requestData = {
-        attempt_id: session_id, // Try attempt_id first
-        session_id: session_id, // Fallback to session_id
+        attempt_id: session_id,
       };
-      
+
       const response: any = await apiClient.post(API_ENDPOINTS.QUIZ.GAME.FINISH, requestData);
-      
+
       console.log('Finish game response:', response);
-      
-      // Handle the API response structure
+
+      // Handle the actual API response structure:
+      // {success: true, response: [{status_code: 200, code: "quiz_completed", details: [{attempt: {...}, progress: {...}, user_answers: [...], badges_earned: [...]}]}]}
       if (response.success && response.response?.[0]?.details?.[0]) {
         const details = response.response[0].details[0];
-        
-        // Transform the response to match expected interface
+
         return {
-          session: details.session || {},
-          final_score: details.final_score || 0,
-          points_earned: details.points_earned || 0,
-          badges_earned: details.badges_earned || [],
-          new_achievements: details.new_achievements || [],
-          rank_change: details.rank_change || 0,
-          performance_summary: details.performance_summary || {
-            total_questions: 0,
-            correct_answers: 0,
-            incorrect_answers: 0,
-            accuracy_percentage: 0,
-            time_taken: 0
-          }
+          attempt: details.attempt || {},
+          progress: details.progress || {},
+          user_answers: details.user_answers || [],
+          badges_earned: details.badges_earned || []
         };
       }
-      
+
       throw new Error('Invalid response structure from finish game API');
     } catch (error) {
       console.error('Finish game API error:', error);
