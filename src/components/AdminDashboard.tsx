@@ -87,14 +87,14 @@ const loadResources = async () => {
 const handleCreateResource = async (e: React.FormEvent) => {
   e.preventDefault();
   if (!newResource.description) {
-    toast({ 
-      title: 'Error', 
-      description: 'Description is required', 
-      variant: 'destructive' 
+    toast({
+      title: 'Error',
+      description: 'Description is required',
+      variant: 'destructive'
     });
     return;
   }
-  
+
   setResourceLoading(true);
   try {
     await resourceService.create({
@@ -103,28 +103,51 @@ const handleCreateResource = async (e: React.FormEvent) => {
       image: newResource.image || undefined,
       quiz: newResource.quiz, // Add this field
     });
-    
-    toast({ 
-      title: 'Success', 
-      description: newResource.quiz 
-        ? 'Resource created and assigned to quiz' 
-        : 'Resource created successfully' 
+
+    toast({
+      title: 'Success',
+      description: newResource.quiz
+        ? 'Resource created and assigned to quiz'
+        : 'Resource created successfully'
     });
-    
+
     // Reset form
-    setNewResource({ 
-      description: '', 
-      raw_file: null, 
+    setNewResource({
+      description: '',
+      raw_file: null,
       image: null,
       quiz: undefined // Reset this field too
     });
-    
+
     loadResources();
   } catch (error) {
-    toast({ 
-      title: 'Error', 
-      description: 'Failed to create resource', 
-      variant: 'destructive' 
+    toast({
+      title: 'Error',
+      description: 'Failed to create resource',
+      variant: 'destructive'
+    });
+  } finally {
+    setResourceLoading(false);
+  }
+};
+
+// Handle resource delete
+const handleDeleteResource = async (id: number) => {
+  if (!confirm('Are you sure you want to delete this resource?')) return;
+
+  setResourceLoading(true);
+  try {
+    await resourceService.delete(id);
+    toast({
+      title: 'Success',
+      description: 'Resource deleted successfully'
+    });
+    loadResources();
+  } catch (error) {
+    toast({
+      title: 'Error',
+      description: 'Failed to delete resource',
+      variant: 'destructive'
     });
   } finally {
     setResourceLoading(false);
@@ -2323,9 +2346,19 @@ const renderResourceManager = () => (
             {resources.map(res => (
               <Card key={res.id} className="border border-border">
                 <CardHeader className="pb-3">
-                  <CardTitle className="text-lg">Resource #{res.id}</CardTitle>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg">Resource #{res.id}</CardTitle>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => handleDeleteResource(res.id)}
+                      title="Delete resource"
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
                   {res.quiz_title && (
-                    <div className="text-sm text-muted-foreground bg-muted/20 px-2 py-1 rounded">
+                    <div className="text-sm text-muted-foreground bg-muted/20 px-2 py-1 rounded mt-2">
                       📚 Assigned to: {res.quiz_title}
                     </div>
                   )}
@@ -2335,30 +2368,30 @@ const renderResourceManager = () => (
                     <span className="font-medium text-sm">Description:</span>
                     <p className="text-sm text-muted-foreground mt-1">{res.description}</p>
                   </div>
-                  
+
                   {res.raw_file && (
                     <div>
-                      <a 
-                        href={res.raw_file} 
-                        target="_blank" 
-                        rel="noopener noreferrer" 
+                      <a
+                        href={res.raw_file}
+                        target="_blank"
+                        rel="noopener noreferrer"
                         className="inline-flex items-center text-sm text-primary hover:text-primary/80 underline"
                       >
                         📄 Download File
                       </a>
                     </div>
                   )}
-                  
+
                   {res.image && (
                     <div>
-                      <img 
-                        src={res.image} 
-                        alt="Resource" 
-                        className="max-h-32 w-full object-cover rounded border" 
+                      <img
+                        src={res.image}
+                        alt="Resource"
+                        className="max-h-32 w-full object-cover rounded border"
                       />
                     </div>
                   )}
-                  
+
                   <div className="text-xs text-muted-foreground pt-2 border-t">
                     Uploaded: {new Date(res.uploaded_at).toLocaleDateString()}
                   </div>
