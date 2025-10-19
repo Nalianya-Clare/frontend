@@ -229,6 +229,7 @@ useEffect(() => {
   const [editingQuiz, setEditingQuiz] = useState<Quiz | null>(null);
   const [showEditQuizDialog, setShowEditQuizDialog] = useState(false);
   const [showCreateQuizDialog, setShowCreateQuizDialog] = useState(false);
+  const [showCreateResourceDialog, setShowCreateResourceDialog] = useState(false);
 
   // User creation form state
   const [newUser, setNewUser] = useState<CreateUserRequest>({
@@ -2251,22 +2252,45 @@ useEffect(() => {
 
 const renderResourceManager = () => (
   <div className="space-y-8">
-    <h2 className="text-2xl font-bold mb-4">Resources</h2>
-    
-    <Card>
-      <CardHeader>
-        <CardTitle>Add New Resource</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <form className="space-y-4" onSubmit={handleCreateResource}>
+    <div className="flex justify-between items-center mb-4">
+      <h2 className="text-2xl font-bold">Resources</h2>
+      <Button variant="cyber" onClick={() => setShowCreateResourceDialog(true)}>
+        <Plus className="mr-2 h-4 w-4" />
+        Add Resource
+      </Button>
+    </div>
+
+    {/* Create Resource Dialog */}
+    <Dialog open={showCreateResourceDialog} onOpenChange={(open) => {
+      setShowCreateResourceDialog(open);
+      if (!open) {
+        setNewResource({
+          description: '',
+          raw_file: null,
+          image: null,
+          quiz: undefined
+        });
+      }
+    }}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Add New Resource</DialogTitle>
+          <DialogDescription>
+            Upload a resource file and optionally assign it to a quiz
+          </DialogDescription>
+        </DialogHeader>
+        <form className="space-y-6 mt-4" onSubmit={(e) => {
+          handleCreateResource(e);
+          setShowCreateResourceDialog(false);
+        }}>
           {/* Quiz Selection */}
           <div className="space-y-2">
             <Label htmlFor="resourceQuiz">Assign to Quiz (Optional)</Label>
             <Select
               value={newResource.quiz ? newResource.quiz.toString() : "none"}
-              onValueChange={(value) => 
-                setNewResource(prev => ({ 
-                  ...prev, 
+              onValueChange={(value) =>
+                setNewResource(prev => ({
+                  ...prev,
                   quiz: value === "none" ? undefined : parseInt(value)
                 }))
               }
@@ -2290,46 +2314,49 @@ const renderResourceManager = () => (
 
           <div className="space-y-2">
             <Label htmlFor="resourceDescription">Description</Label>
-            <Textarea 
+            <Textarea
               id="resourceDescription"
               placeholder="Describe this resource..."
-              value={newResource.description} 
-              onChange={e => setNewResource(r => ({ ...r, description: e.target.value }))} 
-              required 
+              value={newResource.description}
+              onChange={e => setNewResource(r => ({ ...r, description: e.target.value }))}
+              required
             />
           </div>
-          
+
           <div className="space-y-2">
             <Label htmlFor="resourceFile">Raw File (PDF, DOC, TXT, etc.)</Label>
-            <Input 
+            <Input
               id="resourceFile"
-              type="file" 
-              accept=".pdf,.doc,.docx,.txt,.ppt,.pptx,.xls,.xlsx" 
-              onChange={e => handleResourceFileChange(e, 'raw_file')} 
+              type="file"
+              accept=".pdf,.doc,.docx,.txt,.ppt,.pptx,.xls,.xlsx"
+              onChange={e => handleResourceFileChange(e, 'raw_file')}
             />
           </div>
-          
-          {/* <div className="space-y-2">
-            <Label htmlFor="resourceImage">Image</Label>
-            <Input 
-              id="resourceImage"
-              type="file" 
-              accept="image/*" 
-              onChange={e => handleResourceFileChange(e, 'image')} 
-            />
-          </div> */}
-          
-          <Button type="submit" variant="cyber" disabled={resourceLoading}>
-            {resourceLoading ? (
-              <Loader2 className="animate-spin h-4 w-4 mr-2" />
-            ) : (
-              <Plus className="h-4 w-4 mr-2" />
-            )}
-            Add Resource
-          </Button>
+
+          <div className="flex space-x-4 pt-4 border-t">
+            <Button type="button" variant="ghost" onClick={() => {
+              setShowCreateResourceDialog(false);
+              setNewResource({
+                description: '',
+                raw_file: null,
+                image: null,
+                quiz: undefined
+              });
+            }}>
+              Cancel
+            </Button>
+            <Button type="submit" variant="cyber" disabled={resourceLoading} className="flex-1">
+              {resourceLoading ? (
+                <Loader2 className="animate-spin h-4 w-4 mr-2" />
+              ) : (
+                <Plus className="h-4 w-4 mr-2" />
+              )}
+              Add Resource
+            </Button>
+          </div>
         </form>
-      </CardContent>
-    </Card>
+      </DialogContent>
+    </Dialog>
 
     {/* Existing Resources */}
     <Card>
