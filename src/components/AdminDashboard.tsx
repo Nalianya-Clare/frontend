@@ -205,6 +205,7 @@ useEffect(() => {
   // Quiz editing state
   const [editingQuiz, setEditingQuiz] = useState<Quiz | null>(null);
   const [showEditQuizDialog, setShowEditQuizDialog] = useState(false);
+  const [showCreateQuizDialog, setShowCreateQuizDialog] = useState(false);
 
   // User creation form state
   const [newUser, setNewUser] = useState<CreateUserRequest>({
@@ -1061,316 +1062,13 @@ useEffect(() => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-2xl font-bold">Quiz Manager</h2>
-        <Button variant="cyber" onClick={() => loadQuizzes()}>
+        <Button variant="cyber" onClick={() => setShowCreateQuizDialog(true)}>
           <Plus className="mr-2 h-4 w-4" />
-          Refresh Quizzes
+          Create Quiz
         </Button>
       </div>
 
-      {/* Create New Quiz Form */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Create New Quiz</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="category">Category</Label>
-              <Select
-                value={newQuiz.category.toString()}
-                onValueChange={(value) => setNewQuiz(prev => ({ ...prev, category: parseInt(value) }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map((category) => (
-                    <SelectItem key={category.id} value={category.id.toString()}>
-                      {category.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="difficulty">Difficulty</Label>
-              <Select
-                value={newQuiz.difficulty}
-                onValueChange={(value: 'easy' | 'medium' | 'hard') => setNewQuiz(prev => ({ ...prev, difficulty: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select difficulty" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="easy">Easy</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="hard">Hard</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="title">Quiz Title</Label>
-            <Input 
-              id="title" 
-              placeholder="Enter quiz title..."
-              value={newQuiz.title}
-              onChange={(e) => setNewQuiz(prev => ({ ...prev, title: e.target.value }))}
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="description">Description</Label>
-            <Textarea 
-              id="description" 
-              placeholder="Enter quiz description..."
-              className="min-h-[100px]"
-              value={newQuiz.description}
-              onChange={(e) => setNewQuiz(prev => ({ ...prev, description: e.target.value }))}
-            />
-          </div>
-
-          <div className="grid grid-cols-4 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="time_limit">Time Limit (minutes)</Label>
-              <Input 
-                id="time_limit" 
-                type="number"
-                placeholder="30"
-                value={newQuiz.time_limit}
-                onChange={(e) => setNewQuiz(prev => ({ ...prev, time_limit: parseInt(e.target.value) || 30 }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="pass_score">Pass Score (%)</Label>
-              <Input 
-                id="pass_score" 
-                type="number"
-                placeholder="70"
-                value={newQuiz.pass_score}
-                onChange={(e) => setNewQuiz(prev => ({ ...prev, pass_score: parseInt(e.target.value) || 70 }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="points_reward">Points Reward</Label>
-              <Input 
-                id="points_reward" 
-                type="number"
-                placeholder="100"
-                value={newQuiz.points_reward}
-                onChange={(e) => setNewQuiz(prev => ({ ...prev, points_reward: parseInt(e.target.value) || 100 }))}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="start_time">Start Time</Label>
-              <Input
-                id="start_time"
-                type="datetime-local"
-                value={newQuiz.start_time ? newQuiz.start_time.substring(0, 16) : ""}
-                onChange={e => setNewQuiz(prev => ({ ...prev, start_time: e.target.value }))}
-                required
-              />
-            </div>
-          </div>
-
-          {/* Questions Section */}
-          <div className="space-y-4">
-            <div className="flex justify-between items-center">
-              <Label className="text-base">Questions ({newQuiz.questions_data?.length || 0})</Label>
-              <Button variant="neon" onClick={() => setShowQuestionBuilder(!showQuestionBuilder)}>
-                <Plus className="mr-2 h-4 w-4" />
-                Add Question
-              </Button>
-            </div>
-
-            {/* Question List */}
-            {newQuiz.questions_data && newQuiz.questions_data.length > 0 && (
-              <div className="space-y-3">
-                {newQuiz.questions_data.map((question, index) => (
-                  <div key={index} className="p-4 border border-border rounded-lg">
-                    <div className="flex justify-between items-start">
-                      <div className="flex-1">
-                        <div className="font-medium">{question.question_text}</div>
-                        <div className="text-sm text-muted-foreground">
-                          Type: {question.question_type} • Points: {question.points} • Answers: {question.answers.length}
-                        </div>
-                      </div>
-                      <Button size="sm" variant="ghost" onClick={() => removeQuestionFromQuiz(index)}>
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-
-            {/* Question Builder */}
-            {showQuestionBuilder && (
-              <Card className="border-2 border-dashed">
-                <CardHeader>
-                  <CardTitle className="text-lg">Add Question</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Question Type</Label>
-                      <Select
-                        value={currentQuestion.question_type}
-                        onValueChange={(value: 'multiple_choice' | 'true_false' | 'fill_blank') => 
-                          setCurrentQuestion(prev => ({ ...prev, question_type: value, answers: [] }))
-                        }
-                      >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="multiple_choice">Multiple Choice</SelectItem>
-                          <SelectItem value="true_false">True/False</SelectItem>
-                          <SelectItem value="fill_blank">Fill in the Blank</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div className="space-y-2">
-                      <Label>Points</Label>
-                      <Input 
-                        type="number" 
-                        value={currentQuestion.points}
-                        onChange={(e) => setCurrentQuestion(prev => ({ ...prev, points: parseInt(e.target.value) || 1 }))}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Question Text</Label>
-                    <Textarea 
-                      placeholder="Enter your question..."
-                      value={currentQuestion.question_text}
-                      onChange={(e) => setCurrentQuestion(prev => ({ ...prev, question_text: e.target.value }))}
-                    />
-                  </div>
-
-                  {/* Answers Section */}
-                  {currentQuestion.question_type !== 'fill_blank' && (
-                    <div className="space-y-4">
-                      <div className="flex justify-between items-center">
-                        <Label>Answers</Label>
-                        {currentQuestion.question_type === 'multiple_choice' && (
-                          <Button size="sm" variant="outline" onClick={addAnswerToQuestion}>
-                            <Plus className="mr-2 h-4 w-4" />
-                            Add Answer
-                          </Button>
-                        )}
-                      </div>
-
-                      {currentQuestion.question_type === 'true_false' && currentQuestion.answers.length === 0 && (
-                        <div className="space-y-2">
-                          <Button 
-                            variant="outline" 
-                            className="w-full"
-                            onClick={() => {
-                              setCurrentQuestion(prev => ({
-                                ...prev,
-                                answers: [
-                                  { answer_text: "True", is_correct: false, order: 1 },
-                                  { answer_text: "False", is_correct: false, order: 2 }
-                                ]
-                              }));
-                            }}
-                          >
-                            Generate True/False Options
-                          </Button>
-                        </div>
-                      )}
-
-                      {currentQuestion.answers.map((answer, index) => (
-                        <div key={index} className="flex items-center space-x-2">
-                          <Input 
-                            placeholder={`Answer ${index + 1}`}
-                            value={answer.answer_text}
-                            onChange={(e) => updateAnswer(index, 'answer_text', e.target.value)}
-                            className="flex-1"
-                          />
-                          <div className="flex items-center space-x-2">
-                            <input 
-                              type="radio" 
-                              name="correct_answer"
-                              checked={answer.is_correct}
-                              onChange={() => {
-                                // For single correct answer, uncheck others
-                                setCurrentQuestion(prev => ({
-                                  ...prev,
-                                  answers: prev.answers.map((a, i) => ({
-                                    ...a,
-                                    is_correct: i === index
-                                  }))
-                                }));
-                              }}
-                            />
-                            <Label className="text-sm">Correct</Label>
-                          </div>
-                          {currentQuestion.question_type === 'multiple_choice' && (
-                            <Button size="sm" variant="ghost" onClick={() => removeAnswer(index)}>
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-
-                  <div className="space-y-2">
-                    <Label>Explanation</Label>
-                    <Textarea 
-                      placeholder="Explain the correct answer..."
-                      value={currentQuestion.explanation}
-                      onChange={(e) => setCurrentQuestion(prev => ({ ...prev, explanation: e.target.value }))}
-                    />
-                  </div>
-
-                  <div className="flex space-x-2">
-                    <Button variant="cyber" onClick={addQuestionToQuiz}>
-                      Add Question
-                    </Button>
-                    <Button variant="ghost" onClick={() => setShowQuestionBuilder(false)}>
-                      Cancel
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-
-          <div className="flex space-x-4">
-            <Button variant="cyber" onClick={handleCreateQuiz} disabled={loading}>
-              {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              Create Quiz with Questions
-            </Button>
-            <Button variant="neon" onClick={loadSampleQuiz}>
-              Load Sample Quiz
-            </Button>
-            <Button variant="ghost" onClick={() => {
-              setNewQuiz({
-                title: "",
-                description: "",
-                category: 0,
-                difficulty: "easy",
-                time_limit: 30,
-                total_questions: 0,
-                pass_score: 70,
-                points_reward: 100,
-                questions_data: []
-              });
-              setShowQuestionBuilder(false);
-            }}>
-              Reset Form
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Existing Quizzes */}
+      {/* Quizzes Listing */}
       <Card>
         <CardHeader>
           <CardTitle>Existing Quizzes</CardTitle>
@@ -1571,6 +1269,336 @@ useEffect(() => {
               <Button variant="cyber" onClick={handleUpdateQuiz} disabled={loading} className="flex-1">
                 {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                 Update Quiz
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Quiz Dialog */}
+      <Dialog open={showCreateQuizDialog} onOpenChange={(open) => {
+        setShowCreateQuizDialog(open);
+        if (!open) {
+          setNewQuiz({
+            title: "",
+            description: "",
+            category: 0,
+            difficulty: "easy",
+            time_limit: 30,
+            total_questions: 0,
+            pass_score: 70,
+            points_reward: 100,
+            start_time: "",
+            questions_data: []
+          });
+          setShowQuestionBuilder(false);
+        }
+      }}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Create New Quiz</DialogTitle>
+            <DialogDescription>
+              Create a new quiz with questions for your platform
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-6 mt-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="createCategory">Category</Label>
+                <Select
+                  value={newQuiz.category.toString()}
+                  onValueChange={(value) => setNewQuiz(prev => ({ ...prev, category: parseInt(value) }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {categories.map((category) => (
+                      <SelectItem key={category.id} value={category.id.toString()}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="createDifficulty">Difficulty</Label>
+                <Select
+                  value={newQuiz.difficulty}
+                  onValueChange={(value: 'easy' | 'medium' | 'hard') => setNewQuiz(prev => ({ ...prev, difficulty: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select difficulty" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="easy">Easy</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="hard">Hard</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="createTitle">Quiz Title</Label>
+              <Input
+                id="createTitle"
+                placeholder="Enter quiz title..."
+                value={newQuiz.title}
+                onChange={(e) => setNewQuiz(prev => ({ ...prev, title: e.target.value }))}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="createDescription">Description</Label>
+              <Textarea
+                id="createDescription"
+                placeholder="Enter quiz description..."
+                className="min-h-[100px]"
+                value={newQuiz.description}
+                onChange={(e) => setNewQuiz(prev => ({ ...prev, description: e.target.value }))}
+              />
+            </div>
+
+            <div className="grid grid-cols-4 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="createTimeLimit">Time Limit (minutes)</Label>
+                <Input
+                  id="createTimeLimit"
+                  type="number"
+                  placeholder="30"
+                  value={newQuiz.time_limit}
+                  onChange={(e) => setNewQuiz(prev => ({ ...prev, time_limit: parseInt(e.target.value) || 30 }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="createPassScore">Pass Score (%)</Label>
+                <Input
+                  id="createPassScore"
+                  type="number"
+                  placeholder="70"
+                  value={newQuiz.pass_score}
+                  onChange={(e) => setNewQuiz(prev => ({ ...prev, pass_score: parseInt(e.target.value) || 70 }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="createPointsReward">Points Reward</Label>
+                <Input
+                  id="createPointsReward"
+                  type="number"
+                  placeholder="100"
+                  value={newQuiz.points_reward}
+                  onChange={(e) => setNewQuiz(prev => ({ ...prev, points_reward: parseInt(e.target.value) || 100 }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="createStartTime">Start Time</Label>
+                <Input
+                  id="createStartTime"
+                  type="datetime-local"
+                  value={newQuiz.start_time ? newQuiz.start_time.substring(0, 16) : ""}
+                  onChange={e => setNewQuiz(prev => ({ ...prev, start_time: e.target.value }))}
+                  required
+                />
+              </div>
+            </div>
+
+            {/* Questions Section */}
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <Label className="text-base">Questions ({newQuiz.questions_data?.length || 0})</Label>
+                <Button variant="neon" size="sm" onClick={() => setShowQuestionBuilder(!showQuestionBuilder)}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Question
+                </Button>
+              </div>
+
+              {/* Question List */}
+              {newQuiz.questions_data && newQuiz.questions_data.length > 0 && (
+                <div className="space-y-2 max-h-60 overflow-y-auto">
+                  {newQuiz.questions_data.map((question, index) => (
+                    <div key={index} className="p-3 border border-border rounded-lg bg-muted/10">
+                      <div className="flex justify-between items-start">
+                        <div className="flex-1">
+                          <div className="font-medium text-sm">{question.question_text}</div>
+                          <div className="text-xs text-muted-foreground mt-1">
+                            Type: {question.question_type} • Points: {question.points} • {question.answers.length} answers
+                          </div>
+                        </div>
+                        <Button size="sm" variant="ghost" onClick={() => removeQuestionFromQuiz(index)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Question Builder */}
+              {showQuestionBuilder && (
+                <Card className="border-2 border-dashed">
+                  <CardHeader>
+                    <CardTitle className="text-sm">Add Question</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Question Type</Label>
+                        <Select
+                          value={currentQuestion.question_type}
+                          onValueChange={(value: 'multiple_choice' | 'true_false' | 'fill_blank') =>
+                            setCurrentQuestion(prev => ({ ...prev, question_type: value, answers: [] }))
+                          }
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="multiple_choice">Multiple Choice</SelectItem>
+                            <SelectItem value="true_false">True/False</SelectItem>
+                            <SelectItem value="fill_blank">Fill in the Blank</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Points</Label>
+                        <Input
+                          type="number"
+                          value={currentQuestion.points}
+                          onChange={(e) => setCurrentQuestion(prev => ({ ...prev, points: parseInt(e.target.value) || 1 }))}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label>Question Text</Label>
+                      <Textarea
+                        placeholder="Enter your question..."
+                        value={currentQuestion.question_text}
+                        onChange={(e) => setCurrentQuestion(prev => ({ ...prev, question_text: e.target.value }))}
+                      />
+                    </div>
+
+                    {/* Answers Section */}
+                    {currentQuestion.question_type !== 'fill_blank' && (
+                      <div className="space-y-4">
+                        <div className="flex justify-between items-center">
+                          <Label>Answers</Label>
+                          {currentQuestion.question_type === 'multiple_choice' && (
+                            <Button size="sm" variant="outline" onClick={addAnswerToQuestion}>
+                              <Plus className="mr-2 h-4 w-4" />
+                              Add Answer
+                            </Button>
+                          )}
+                        </div>
+
+                        {currentQuestion.question_type === 'true_false' && currentQuestion.answers.length === 0 && (
+                          <div className="space-y-2">
+                            <Button
+                              variant="outline"
+                              className="w-full"
+                              onClick={() => {
+                                setCurrentQuestion(prev => ({
+                                  ...prev,
+                                  answers: [
+                                    { answer_text: "True", is_correct: false, order: 1 },
+                                    { answer_text: "False", is_correct: false, order: 2 }
+                                  ]
+                                }));
+                              }}
+                            >
+                              Generate True/False Options
+                            </Button>
+                          </div>
+                        )}
+
+                        {currentQuestion.answers.map((answer, index) => (
+                          <div key={index} className="flex items-center space-x-2">
+                            <Input
+                              placeholder={`Answer ${index + 1}`}
+                              value={answer.answer_text}
+                              onChange={(e) => updateAnswer(index, 'answer_text', e.target.value)}
+                              className="flex-1"
+                            />
+                            <div className="flex items-center space-x-2">
+                              <input
+                                type="radio"
+                                name="correct_answer"
+                                checked={answer.is_correct}
+                                onChange={() => {
+                                  // For single correct answer, uncheck others
+                                  setCurrentQuestion(prev => ({
+                                    ...prev,
+                                    answers: prev.answers.map((a, i) => ({
+                                      ...a,
+                                      is_correct: i === index
+                                    }))
+                                  }));
+                                }}
+                              />
+                              <Label className="text-sm">Correct</Label>
+                            </div>
+                            {currentQuestion.question_type === 'multiple_choice' && (
+                              <Button size="sm" variant="ghost" onClick={() => removeAnswer(index)}>
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    <div className="space-y-2">
+                      <Label>Explanation</Label>
+                      <Textarea
+                        placeholder="Explain the correct answer..."
+                        value={currentQuestion.explanation}
+                        onChange={(e) => setCurrentQuestion(prev => ({ ...prev, explanation: e.target.value }))}
+                      />
+                    </div>
+
+                    <div className="flex space-x-2">
+                      <Button variant="cyber" size="sm" onClick={addQuestionToQuiz}>
+                        Add Question
+                      </Button>
+                      <Button variant="ghost" size="sm" onClick={() => setShowQuestionBuilder(false)}>
+                        Cancel
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+
+            <div className="flex space-x-4 pt-4 border-t">
+              <Button variant="ghost" onClick={() => {
+                setShowCreateQuizDialog(false);
+                setNewQuiz({
+                  title: "",
+                  description: "",
+                  category: 0,
+                  difficulty: "easy",
+                  time_limit: 30,
+                  total_questions: 0,
+                  pass_score: 70,
+                  points_reward: 100,
+                  start_time: "",
+                  questions_data: []
+                });
+                setShowQuestionBuilder(false);
+              }}>
+                Cancel
+              </Button>
+              <Button variant="neon" onClick={loadSampleQuiz}>
+                Load Sample
+              </Button>
+              <Button variant="cyber" onClick={() => {
+                handleCreateQuiz();
+                setShowCreateQuizDialog(false);
+              }} disabled={loading} className="flex-1">
+                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                Create Quiz
               </Button>
             </div>
           </div>
