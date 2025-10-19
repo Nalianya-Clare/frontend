@@ -217,26 +217,7 @@ const MyProgress = () => {
           </Card>
         </div>
 
-        {/* Quick Actions */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
-          </CardHeader>
-          <CardContent className="grid md:grid-cols-3 gap-4">
-            <Button variant="cyber" className="w-full">
-              <Target className="mr-2 h-4 w-4" />
-              Continue Learning
-            </Button>
-            <Button variant="neon" className="w-full">
-              <Trophy className="mr-2 h-4 w-4" />
-              View Leaderboard
-            </Button>
-            <Button variant="outline" className="w-full">
-              <TrendingUp className="mr-2 h-4 w-4" />
-              Detailed Analytics
-            </Button>
-          </CardContent>
-        </Card>
+   
       </div>
     </div>
   );
