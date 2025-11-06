@@ -572,7 +572,7 @@ useEffect(() => {
         total_questions: fullQuiz.total_questions,
         pass_score: fullQuiz.pass_score,
         points_reward: fullQuiz.points_reward,
-        start_time: "",
+        start_time: fullQuiz.start_time || "",
         questions_data: fullQuiz.questions?.map(q => ({
           question_text: q.question_text,
           question_type: q.question_type,
@@ -622,7 +622,8 @@ useEffect(() => {
         time_limit: newQuiz.time_limit,
         pass_score: newQuiz.pass_score,
         points_reward: newQuiz.points_reward,
-        total_questions: newQuiz.questions_data?.length || 0
+        total_questions: newQuiz.questions_data?.length || 0,
+        start_time: newQuiz.start_time
       };
 
       await adminService.updateQuiz(editingQuiz.id, quizToUpdate);
@@ -1221,7 +1222,7 @@ useEffect(() => {
               />
             </div>
 
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-4 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="editTimeLimit">Time Limit (minutes)</Label>
                 <Input
@@ -1250,6 +1251,15 @@ useEffect(() => {
                   placeholder="100"
                   value={newQuiz.points_reward}
                   onChange={(e) => setNewQuiz(prev => ({ ...prev, points_reward: parseInt(e.target.value) || 100 }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="editStartTime">Start Time</Label>
+                <Input
+                  id="editStartTime"
+                  type="datetime-local"
+                  value={newQuiz.start_time ? newQuiz.start_time.substring(0, 16) : ""}
+                  onChange={e => setNewQuiz(prev => ({ ...prev, start_time: e.target.value }))}
                 />
               </div>
             </div>
