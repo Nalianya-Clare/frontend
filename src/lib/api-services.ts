@@ -118,6 +118,7 @@ export interface Quiz {
   created_by_name?: string;
   created_at: string;
   resources?: Resource[];
+  start_time?: string;
 }
 
 export interface Question {
