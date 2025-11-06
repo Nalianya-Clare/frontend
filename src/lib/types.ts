@@ -58,6 +58,7 @@ export interface Quiz {
   created_by_name: string;
   created_at: string;
   question_count: string;
+  start_time?: string;
 }
 
 export interface QuizDetail extends Quiz {
